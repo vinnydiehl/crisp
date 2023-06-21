@@ -1,0 +1,138 @@
+use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv};
+
+pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    match expr {
+        // It's a symbol, check the environment for it
+        CrispExpr::Symbol(key) => env.data.get(key)
+            .ok_or_else(|| CrispError::Reason(format!("Unexpected symbol: {}", key)))
+            .map(|v| v.clone()),
+
+        // It's a number, send it
+        CrispExpr::Number(_) => Ok(expr.clone()),
+
+        // It's a list; the first node needs to be a function, the rest are args
+        CrispExpr::List(list) => {
+            let head = list.first()
+                .ok_or_else(|| CrispError::Reason("Received an empty list.".to_string()))?;
+            let args = &list[1..];
+
+            let first_eval = eval(head, env)?;
+            match first_eval {
+                CrispExpr::Func(f) => {
+                    let args_eval: Result<Vec<_>, _> = args.iter().map(|a| eval(a, env)).collect();
+                    f(&args_eval?)
+                },
+                _ => Err(CrispError::Reason("List must begin with a function.".to_string()))
+            }
+        },
+
+        // Sorry, no infix functions yet :(
+        CrispExpr::Func(_) => Err(CrispError::Reason("Found unexpected function in list.".to_string()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{env::initialize_environment, expr::CrispExpr::*};
+
+    #[test]
+    fn test_eval_symbol_found() {
+        let mut env = initialize_environment();
+        env.data.insert("foo".to_string(), Number(42.0));
+
+        let expr = Symbol("foo".to_string());
+        let result = eval(&expr, &mut env);
+
+        assert_eq!(result, Ok(Number(42.0)));
+    }
+
+    #[test]
+    fn test_eval_symbol_not_found() {
+        let mut env = initialize_environment();
+
+        let expr = Symbol("x".to_string());
+        assert!(eval(&expr, &mut env).is_err());
+    }
+
+    #[test]
+    fn test_eval_number() {
+        let mut env = initialize_environment();
+
+        let expr = Number(3.14);
+        let result = eval(&expr, &mut env);
+
+        assert_eq!(result, Ok(Number(3.14)));
+    }
+
+    #[test]
+    fn test_eval_list_empty() {
+        let mut env = initialize_environment();
+
+        let expr = List(vec![]);
+        assert!(eval(&expr, &mut env).is_err());
+    }
+
+    #[test]
+    fn test_eval_list_func() {
+        let mut env = initialize_environment();
+
+        let expr = List(vec![
+            Symbol("+".to_string()),
+            Number(2.0),
+            Number(3.0),
+            Number(4.0)
+        ]);
+        let result = eval(&expr, &mut env);
+
+        assert_eq!(result, Ok(Number(9.0)));
+    }
+
+    #[test]
+    fn test_eval_nested_list() {
+        let mut env = initialize_environment();
+
+        let expr = List(vec![
+            Symbol("*".to_string()),
+            List(vec![
+                Symbol("+".to_string()),
+                Number(2.0),
+                Number(3.0)
+            ]),
+            Number(2.0),
+            List(vec![
+                Symbol("-".to_string()),
+                Number(6.0),
+                Number(2.0)
+            ]),
+            Number(2.0)
+        ]);
+        let result = eval(&expr, &mut env);
+
+        assert_eq!(result, Ok(Number(80.0)));
+    }
+
+    #[test]
+    fn test_eval_list_func_missing() {
+        let mut env = initialize_environment();
+
+        let expr = List(vec![
+            Number(2.0),
+            Number(3.0),
+            Number(4.0)
+        ]);
+        assert!(eval(&expr, &mut env).is_err());
+    }
+
+    #[test]
+    fn test_eval_list_func_mid() {
+        let mut env = initialize_environment();
+
+        let expr = List(vec![
+            Number(2.0),
+            Symbol("+".to_string()),
+            Number(3.0)
+        ]);
+        assert!(eval(&expr, &mut env).is_err());
+    }
+}
