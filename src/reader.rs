@@ -55,8 +55,12 @@ fn parse_seq<'a>(token_slice: &'a[String]) -> Result<(CrispExpr, &'a[String]), C
 
 /// Parses an atom out of an individual token.
 fn parse_atom(token: &str) -> CrispExpr {
-    token.parse().map(CrispExpr::Number)
-                 .unwrap_or_else(|_| CrispExpr::Symbol(token.to_string()))
+    match token.as_ref() {
+        "true" => CrispExpr::Bool(true),
+        "false" => CrispExpr::Bool(false),
+        _ => token.parse().map(CrispExpr::Number)
+                          .unwrap_or_else(|_| CrispExpr::Symbol(token.to_string()))
+    }
 }
 
 #[cfg(test)]

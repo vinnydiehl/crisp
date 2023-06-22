@@ -7,8 +7,9 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
             .ok_or_else(|| CrispError::Reason(format!("Unexpected symbol: {}", key)))
             .map(|v| v.clone()),
 
-        // It's a number, send it
+        // It's a number or a bool, send it
         CrispExpr::Number(_) => Ok(expr.clone()),
+        CrispExpr::Bool(_) => Ok(expr.clone()),
 
         // It's a list; the first node needs to be a function, the rest are args
         CrispExpr::List(list) => {

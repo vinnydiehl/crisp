@@ -7,6 +7,27 @@ pub struct CrispEnv {
     pub data: HashMap<String, CrispExpr>
 }
 
+macro_rules! bool_compare {
+    ($f:expr) => {{
+        |args: &[CrispExpr]| -> Result<CrispExpr, CrispError> {
+            let xs = extract_list_numbers(args)?;
+            let head = xs.first().ok_or_else(|| CrispError::Reason("Expected 1+ arguments.".to_string()))?;
+            let tail = &xs[1..];
+
+            // Recursively consume the remainder of the list, ensuring a monotonic order
+            // beginning-to-end e.g. (> 10 5 2 1) or (<= 2 5 5 7 8)
+            fn f(head: &f64, tail: &[f64]) -> bool {
+                match tail.first() {
+                    Some(next) => $f(head, next) && f(next, &tail[1..]),
+                    None => true
+                }
+            }
+
+            Ok(CrispExpr::Bool(f(head, tail)))
+        }
+    }};
+}
+
 pub fn initialize_environment() -> CrispEnv {
     let mut data: HashMap<String, CrispExpr> = HashMap::new();
 
@@ -36,6 +57,33 @@ pub fn initialize_environment() -> CrispEnv {
         CrispExpr::Func(|args: &[CrispExpr]| -> Result<CrispExpr, CrispError> {
             list_foldl(args, |acc, n| acc / n)
         })
+    );
+
+    // Boolean shit
+
+    data.insert(
+        "=".to_string(),
+        CrispExpr::Func(bool_compare!(|a, b| a == b))
+    );
+
+    data.insert(
+        ">".to_string(),
+        CrispExpr::Func(bool_compare!(|a, b| a > b))
+    );
+
+    data.insert(
+        "<".to_string(),
+        CrispExpr::Func(bool_compare!(|a, b| a < b))
+    );
+
+    data.insert(
+        ">=".to_string(),
+        CrispExpr::Func(bool_compare!(|a, b| a >= b))
+    );
+
+    data.insert(
+        "<=".to_string(),
+        CrispExpr::Func(bool_compare!(|a, b| a <= b))
     );
 
     CrispEnv { data }
