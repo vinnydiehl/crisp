@@ -112,7 +112,7 @@ mod tests {
 
     macro_rules! num_list {
         ($($elem:expr),*) => {
-            vec![ $( Number($elem) ),* ]
+            vec![$(Number($elem)),*]
         }
     }
 
