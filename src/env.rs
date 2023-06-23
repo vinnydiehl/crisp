@@ -10,16 +10,22 @@ pub struct CrispEnv {
 pub fn initialize_environment() -> CrispEnv {
     let mut data: HashMap<String, CrispExpr> = HashMap::new();
 
-    data.insert("+".to_string(), CrispExpr::Func(functions::add));
-    data.insert("-".to_string(), CrispExpr::Func(functions::sub));
-    data.insert("*".to_string(), CrispExpr::Func(functions::mult));
-    data.insert("/".to_string(), CrispExpr::Func(functions::div));
+    macro_rules! add_function {
+        ($name:expr, $rust_function:ident) => {
+            data.insert($name.to_string(), CrispExpr::Func(functions::$rust_function));
+        }
+    }
 
-    data.insert("=".to_string(), CrispExpr::Func(functions::eq));
-    data.insert(">".to_string(), CrispExpr::Func(functions::gt));
-    data.insert(">=".to_string(), CrispExpr::Func(functions::gte));
-    data.insert("<".to_string(), CrispExpr::Func(functions::lt));
-    data.insert("<=".to_string(), CrispExpr::Func(functions::lte));
+    add_function!("+", add);
+    add_function!("-", sub);
+    add_function!("*", mult);
+    add_function!("/", div);
+
+    add_function!("=", eq);
+    add_function!(">", gt);
+    add_function!(">=", gte);
+    add_function!("<", lt);
+    add_function!("<=", lte);
 
     CrispEnv { data }
 }

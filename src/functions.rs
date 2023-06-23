@@ -61,6 +61,16 @@ pub fn lte(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     fold_compare!(|a, b| a >= b)(args)
 }
 
+fn extract_value<T>(expr: &CrispExpr) -> Result<T, CrispError>
+where T: FromCrispExpr {
+    T::from_crisp_expr(expr)
+}
+
+fn extract_list<T>(list: &[CrispExpr]) -> Result<Vec<T>, CrispError>
+where T: FromCrispExpr {
+    list.iter().map(|expr| extract_value::<T>(expr)).collect()
+}
+
 fn list_foldl<T, U>(list: &[CrispExpr], init: T,
                     mut operation: impl FnMut(T, U) -> T) -> Result<CrispExpr, CrispError>
 where
@@ -71,7 +81,7 @@ where
 
     if extracted_list.len() < 1 {
         return Err(CrispError::Reason("Expected 1+ arguments.".to_string()));
-    };
+    }
 
     Ok(T::into_crisp_expr(
         extracted_list.iter().fold(init, |acc: T, &n: &U| operation(acc, n))
@@ -80,9 +90,7 @@ where
 
 fn list_foldl1<T>(list: &[CrispExpr],
                   mut operation: impl FnMut(T, T) -> T) -> Result<CrispExpr, CrispError>
-where
-    T: FromCrispExpr + IntoCrispExpr + Copy
-{
+where T: FromCrispExpr + IntoCrispExpr + Copy {
     let numbers = extract_list::<T>(list)?;
 
     if let Some((first, rest)) = numbers.split_first() {
@@ -93,52 +101,9 @@ where
     }
 }
 
-fn extract_list<T>(list: &[CrispExpr]) -> Result<Vec<T>, CrispError>
-where
-    T: FromCrispExpr,
-{
-    list.iter().map(|expr| extract_value::<T>(expr)).collect()
-}
-
-fn extract_value<T>(expr: &CrispExpr) -> Result<T, CrispError>
-where
-    T: FromCrispExpr,
-{
-    T::from_crisp_expr(expr)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_extract_list() {
-        // Test case with valid numbers
-        let list = vec![
-            CrispExpr::Number(1.0),
-            CrispExpr::Number(2.0),
-            CrispExpr::Number(3.0),
-        ];
-        let result = extract_list::<f64>(&list);
-        assert_eq!(result.unwrap(), vec![1.0, 2.0, 3.0]);
-
-        // Test case with mixed types
-        let list = vec![
-            CrispExpr::Number(1.0),
-            CrispExpr::Number(2.0),
-            CrispExpr::Symbol("foo".to_string())
-        ];
-        let result = extract_list::<f64>(&list);
-        assert!(matches!(result, Err(CrispError::Reason(_))));
-
-        // Test bools
-        let list = vec![
-            CrispExpr::Bool(true),
-            CrispExpr::Bool(false)
-        ];
-        let result = extract_list::<bool>(&list);
-        assert_eq!(result.unwrap(), vec![true, false]);
-    }
 
     #[test]
     fn test_extract_value() {
@@ -152,5 +117,31 @@ mod tests {
         let expr = CrispExpr::Symbol("abc".to_string());
         let result = extract_value::<f64>(&expr);
         assert!(matches!(result, Err(CrispError::Reason(_))));
+    }
+
+    #[test]
+    fn test_extract_list() {
+        // Test case with valid numbers
+        let result = extract_list::<f64>(&vec![
+            CrispExpr::Number(1.0),
+            CrispExpr::Number(2.0),
+            CrispExpr::Number(3.0),
+        ]);
+        assert_eq!(result.unwrap(), vec![1.0, 2.0, 3.0]);
+
+        // Test case with mixed types
+        let result = extract_list::<f64>(&vec![
+            CrispExpr::Number(1.0),
+            CrispExpr::Number(2.0),
+            CrispExpr::Symbol("foo".to_string())
+        ]);
+        assert!(matches!(result, Err(CrispError::Reason(_))));
+
+        // Test bools
+        let result = extract_list::<bool>(&vec![
+            CrispExpr::Bool(true),
+            CrispExpr::Bool(false)
+        ]);
+        assert_eq!(result.unwrap(), vec![true, false]);
     }
 }
