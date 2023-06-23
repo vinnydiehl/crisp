@@ -47,3 +47,41 @@ impl fmt::Display for CrispExpr {
         write!(f, "{}", str)
     }
 }
+
+pub trait FromCrispExpr: Sized {
+    fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError>;
+}
+
+impl FromCrispExpr for f64 {
+    fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
+        match expr {
+            CrispExpr::Number(n) => Ok(*n),
+            _ => Err(CrispError::Reason("Expected a number.".to_string())),
+        }
+    }
+}
+
+impl FromCrispExpr for bool {
+    fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
+        match expr {
+            CrispExpr::Bool(b) => Ok(*b),
+            _ => Err(CrispError::Reason("Expected a boolean.".to_string())),
+        }
+    }
+}
+
+pub trait IntoCrispExpr {
+    fn into_crisp_expr(self) -> CrispExpr;
+}
+
+impl IntoCrispExpr for bool {
+    fn into_crisp_expr(self) -> CrispExpr {
+        CrispExpr::Bool(self)
+    }
+}
+
+impl IntoCrispExpr for f64 {
+    fn into_crisp_expr(self) -> CrispExpr {
+        CrispExpr::Number(self)
+    }
+}
