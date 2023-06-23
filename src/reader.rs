@@ -66,7 +66,7 @@ fn parse_atom(token: &str) -> CrispExpr {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expr::CrispExpr::*;
+    use crate::{expr::CrispExpr::*, macros::*};
 
     #[test]
     fn test_tokenize() {
@@ -100,11 +100,11 @@ mod tests {
 
         let (expr, remaining_tokens) = parse(&tokens).unwrap();
 
-        assert_eq!(expr, List(vec![
-             Symbol("+".to_string()),
+        assert_eq!(expr, list![
+             sym!("+"),
              Number(3.0),
-             Symbol("var".to_string())
-        ]));
+             sym!("var")
+        ]);
 
         assert!(remaining_tokens.is_empty());
     }
@@ -116,16 +116,16 @@ mod tests {
                                                                       .collect::<Vec<String>>();
         let (expr, remaining_tokens) = parse(&tokens).unwrap();
 
-        assert_eq!(expr, List(vec![
-            Symbol("+".to_string()),
+        assert_eq!(expr, list![
+            sym!("+"),
             Number(5.0),
-            List(vec![
-                Symbol("*".to_string()),
+            list![
+                sym!("*"),
                 Number(3.0),
-                Number(2.0),
-            ]),
+                Number(2.0)
+            ],
             Number(2.0)
-        ]));
+        ]);
 
         assert!(remaining_tokens.is_empty());
     }

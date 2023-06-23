@@ -108,31 +108,7 @@ where T: FromCrispExpr + IntoCrispExpr + Copy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::expr::CrispExpr::*;
-
-    macro_rules! num_list {
-        ($($elem:expr),*) => {
-            vec![$(Number($elem)),*]
-        }
-    }
-
-    macro_rules! crisp_assert {
-        ($expr:expr) => {
-            assert_eq!($expr.unwrap(), Bool(true));
-        }
-    }
-
-    macro_rules! crisp_assert_false {
-        ($expr:expr) => {
-            assert_eq!($expr.unwrap(), Bool(false));
-        }
-    }
-
-    macro_rules! crisp_assert_eq {
-        ($expr:expr, $result:expr) => {
-            assert_eq!($expr.unwrap(), Number($result));
-        }
-    }
+    use crate::{expr::CrispExpr::*, macros::*};
 
     // Math
 
@@ -224,7 +200,7 @@ mod tests {
         assert_eq!(result.unwrap(), 42.0);
 
         // Test case with a non-number
-        let expr = Symbol("abc".to_string());
+        let expr = sym!("abc");
         let result = extract_value::<f64>(&expr);
         assert!(matches!(result, Err(CrispError::Reason(_))));
     }
@@ -235,7 +211,7 @@ mod tests {
         let result = extract_list::<f64>(&vec![
             Number(1.0),
             Number(2.0),
-            Symbol("foo".to_string())
+            sym!("foo")
         ]);
         assert!(matches!(result, Err(CrispError::Reason(_))));
 
