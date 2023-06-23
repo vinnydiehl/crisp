@@ -18,6 +18,10 @@ pub fn div (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc / n)
 }
 
+pub fn modulus (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    list_foldl1::<f64>(args, |acc, n| acc % n)
+}
+
 // Boolean operators
 
 pub fn eq(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
@@ -154,6 +158,12 @@ mod tests {
     fn test_div() {
         crisp_assert_eq!(div(&num_list![9.0, 2.0]), 4.5);
         crisp_assert_eq!(div(&num_list![30.0, 3.0, 2.0]), 5.0);
+    }
+
+    #[test]
+    fn test_mod() {
+        crisp_assert_eq!(modulus(&num_list![9.0, 2.0]), 1.0);
+        crisp_assert_eq!(modulus(&num_list![35.0, 25.0, 6.0]), 4.0);
     }
 
     // Boolean

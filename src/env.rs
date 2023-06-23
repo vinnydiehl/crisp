@@ -20,6 +20,7 @@ pub fn initialize_environment() -> CrispEnv {
     add_function!("-", sub);
     add_function!("*", mult);
     add_function!("/", div);
+    add_function!("mod", modulus);
 
     add_function!("=", eq);
     add_function!(">", gt);
