@@ -7,6 +7,7 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
         CrispExpr::Symbol(s) => {
             match s.as_ref() {
                 "if" => Some(eval_if(args, env)),
+                "let" => Some(eval_let(args, env)),
                 _ => None
             }
         },
@@ -29,6 +30,22 @@ fn eval_if(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispErr
         },
         _ => type_error!("Bool")
     }
+}
+
+fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    argument_error!(args, 2, 2);
+
+    let name_sym = args.first().unwrap();
+    let name = match name_sym {
+        CrispExpr::Symbol(s) => Ok(s.clone()),
+        _ => type_error!("Symbol")
+    }?;
+
+    let value = eval(args.get(1).unwrap(), env)?;
+
+    env.data.insert(name, value.clone());
+
+    Ok(value.clone())
 }
 
 #[cfg(test)]
@@ -133,5 +150,68 @@ mod tests {
             ]
         ];
         assert_eq!(eval_if(&list, &mut env).unwrap(), Number(7.0));
+    }
+
+    // let keyword
+
+    #[test]
+    fn test_let_from_eval() {
+        // Tests that the let keyword calls this routine. See the rest of the tests
+        // in this section for more details.
+        let mut env = initialize_environment();
+        let list = list![sym!("let"), sym!("foo"), Number(5.0)];
+        eval(&list, &mut env).unwrap();
+    }
+
+    #[test]
+    fn test_let_sets_data() {
+        let mut env = initialize_environment();
+        let list = vec![
+            sym!("foo"),
+            Number(5.0)
+        ];
+        eval_let(&list, &mut env).unwrap();
+
+        assert_eq!(env.data.get("foo").unwrap(), &Number(5.0));
+
+        // Change it
+
+        let list = vec![
+            sym!("foo"),
+            Number(10.0)
+        ];
+        eval_let(&list, &mut env).unwrap();
+
+        assert_eq!(env.data.get("foo").unwrap(), &Number(10.0));
+    }
+
+    #[test]
+    fn test_let_evaluates() {
+        let mut env = initialize_environment();
+        let list = vec![
+            sym!("foo"),
+            list![
+                sym!("+"),
+                Number(1.0),
+                Number(2.0)
+            ]
+        ];
+        eval_let(&list, &mut env).unwrap();
+
+        assert_eq!(env.data.get("foo").unwrap(), &Number(3.0));
+    }
+
+    #[test]
+    fn test_let_data_retrievable() {
+        // Can we get the value of the variable by `eval`ing the symbol?
+
+        let mut env = initialize_environment();
+        let list = vec![
+            sym!("foo"),
+            Number(5.0)
+        ];
+        eval_let(&list, &mut env).unwrap();
+
+        assert_eq!(eval(&sym!("foo"), &mut env).unwrap(), Number(5.0));
     }
 }
