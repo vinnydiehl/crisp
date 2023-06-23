@@ -44,9 +44,7 @@ pub fn run() {
 
         match send(line, env) {
             Ok(ret) => println!("=> {}", ret),
-            Err(e) => match e {
-                CrispError::Reason(msg) => println!("[crisp] Error: {}", msg)
-            }
+            Err(e) => println!("{}", e)
         }
     }
 }

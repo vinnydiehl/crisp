@@ -1,4 +1,4 @@
-use crate::{error::CrispError, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
+use crate::{error::{CrispError, argument_error}, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
 
 // Math operators
 
@@ -25,9 +25,9 @@ pub fn modulus (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
 // Boolean operators
 
 pub fn eq(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
-    let first_value = extract_value::<f64>(
-        args.first().ok_or(CrispError::Reason("Expected 1+ arguments.".to_string()))?
-    )?;
+    argument_error!(args, 2, -1);
+
+    let first_value = extract_value::<f64>(args.first().unwrap())?;
 
     // Fold across the list, comparing each value to the first
     list_foldl::<bool, f64>(&args[1..], true, |acc, n| acc && n == first_value)
@@ -36,9 +36,9 @@ pub fn eq(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
 macro_rules! fold_compare {
     ($f:expr) => {{
         |args: &[CrispExpr]| ->  Result<CrispExpr, CrispError> {
-            let mut prev_value = extract_value::<f64>(
-                args.first().ok_or(CrispError::Reason("Expected 1+ arguments.".to_string()))?
-            )?;
+            argument_error!(args, 2, -1);
+
+            let mut prev_value = extract_value::<f64>(args.first().unwrap())?;
 
             list_foldl::<bool, f64>(&args[1..], true, |acc, n| {
                 let result = acc && $f(n, prev_value);
@@ -75,34 +75,30 @@ where T: FromCrispExpr {
     list.iter().map(|expr| extract_value::<T>(expr)).collect()
 }
 
-fn list_foldl<T, U>(list: &[CrispExpr], init: T,
+fn list_foldl<T, U>(args: &[CrispExpr], init: T,
                     mut operation: impl FnMut(T, U) -> T) -> Result<CrispExpr, CrispError>
 where
     T: IntoCrispExpr,
     U: FromCrispExpr + Copy
 {
-    let extracted_list = extract_list::<U>(list)?;
-
-    if extracted_list.len() < 1 {
-        return Err(CrispError::Reason("Expected 1+ arguments.".to_string()));
-    }
+    argument_error!(args, 1, -1);
 
     Ok(T::into_crisp_expr(
-        extracted_list.iter().fold(init, |acc: T, &n: &U| operation(acc, n))
+        extract_list::<U>(args)?.iter().fold(init, |acc: T, &n: &U| operation(acc, n))
     ))
 }
 
-fn list_foldl1<T>(list: &[CrispExpr],
+fn list_foldl1<T>(args: &[CrispExpr],
                   mut operation: impl FnMut(T, T) -> T) -> Result<CrispExpr, CrispError>
 where T: FromCrispExpr + IntoCrispExpr + Copy {
-    let numbers = extract_list::<T>(list)?;
+    argument_error!(args, 2, -1);
 
-    if let Some((first, rest)) = numbers.split_first() {
-        let result = rest.iter().fold(*first, |acc: T, &n: &T| operation(acc, n));
-        Ok(T::into_crisp_expr(result))
-    } else {
-        Err(CrispError::Reason("Expected 1+ arguments.".to_string()))
-    }
+    let numbers = extract_list::<T>(args)?;
+    let (first, rest) = numbers.split_first().unwrap();
+
+    Ok(T::into_crisp_expr(
+        rest.iter().fold(*first, |acc: T, &n: &T| operation(acc, n))
+    ))
 }
 
 #[cfg(test)]
@@ -202,7 +198,7 @@ mod tests {
         // Test case with a non-number
         let expr = sym!("abc");
         let result = extract_value::<f64>(&expr);
-        assert!(matches!(result, Err(CrispError::Reason(_))));
+        assert!(matches!(result, Err(CrispError::TypeError(_))));
     }
 
     #[test]
@@ -213,7 +209,7 @@ mod tests {
             Number(2.0),
             sym!("foo")
         ]);
-        assert!(matches!(result, Err(CrispError::Reason(_))));
+        assert!(matches!(result, Err(CrispError::TypeError(_))));
 
         // Numbers
         let result = extract_list::<f64>(&num_list![1.0, 2.0, 3.0]);

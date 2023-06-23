@@ -1,36 +1,36 @@
 macro_rules! sym {
     ($name:expr) => {
-        Symbol($name.to_string())
+        CrispExpr::Symbol($name.to_string())
     }
 }
 
 macro_rules! list {
     ($($elem:expr),*) => {
-        List(vec![$($elem),*])
+        CrispExpr::List(vec![$($elem),*])
     }
 }
 
 macro_rules! num_list {
     ($($elem:expr),*) => {
-        vec![$(Number($elem)),*]
+        vec![$(CrispExpr::Number($elem)),*]
     }
 }
 
 macro_rules! crisp_assert {
     ($expr:expr) => {
-        assert_eq!($expr.unwrap(), Bool(true));
+        assert_eq!($expr.unwrap(), CrispExpr::Bool(true));
     }
 }
 
 macro_rules! crisp_assert_false {
     ($expr:expr) => {
-        assert_eq!($expr.unwrap(), Bool(false));
+        assert_eq!($expr.unwrap(), CrispExpr::Bool(false));
     }
 }
 
 macro_rules! crisp_assert_eq {
     ($expr:expr, $result:expr) => {
-        assert_eq!($expr.unwrap(), Number($result));
+        assert_eq!($expr.unwrap(), CrispExpr::Number($result));
     }
 }
 

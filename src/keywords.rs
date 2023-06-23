@@ -1,4 +1,5 @@
-use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, eval::eval};
+use crate::{error::{CrispError, argument_error, type_error},
+            expr::CrispExpr, env::CrispEnv, eval::eval};
 
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                 env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
@@ -14,22 +15,19 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
 }
 
 fn eval_if(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
-    let predicate = args.first().ok_or_else(|| CrispError::Reason("No predicate found.".to_string()))?;
-    let predicate_result = eval(predicate, env)?;
+    argument_error!(args, 3, 3);
 
-    match predicate_result {
+    match eval(args.first().unwrap(), env)? {
         CrispExpr::Bool(b) => {
             // The function is going to be called like:
             //     (if (> a b) true_routine false_routine)
             // Depending on whether or not the predicate is true, we want to index
             // the args differently (0 is the predicate)
-            let response = args.get(if b { 1 } else { 2 }).ok_or_else(||
-                CrispError::Reason(format!("Predicate returned {} but nothing to evaluate.", b))
-            )?;
+            let response = args.get(if b { 1 } else { 2 }).unwrap();
 
             eval(response, env)
         },
-        _ => Err(CrispError::Reason(format!("Unexpected predicate: `{}`", predicate)))
+        _ => type_error!("Bool")
     }
 }
 

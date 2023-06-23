@@ -1,10 +1,11 @@
-use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, keywords::eval_keyword};
+use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::CrispExpr,
+            env::CrispEnv, keywords::eval_keyword};
 
 pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     match expr {
         // It's a symbol, check the environment for it
         CrispExpr::Symbol(key) => env.data.get(key)
-            .ok_or_else(|| CrispError::Reason(format!("Unexpected symbol: {}", key)))
+            .ok_or_else(|| parse_error_unwrapped!(format!("Unexpected symbol: {}", key)))
             .map(|v| v.clone()),
 
         // It's a number or a bool, send it
@@ -14,7 +15,7 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
         // It's a list; the first node needs to be a function, the rest are args
         CrispExpr::List(list) => {
             let head = list.first()
-                .ok_or_else(|| CrispError::Reason("Received an empty list.".to_string()))?;
+                .ok_or_else(|| parse_error_unwrapped!("Received an empty list."))?;
             let args = &list[1..];
 
             match eval_keyword(head, args, env) {
@@ -28,15 +29,14 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
                                                                    .collect();
                             f(&args_eval?)
                         },
-                        _ => Err(CrispError::Reason("List must begin with a function.".to_string()))
+                        _ => parse_error!("List must begin with a function.")
                     }
                 }
             }
         },
 
         // Sorry, no infix functions yet :(
-        CrispExpr::Func(_) =>
-            Err(CrispError::Reason("Found unexpected function in list.".to_string()))
+        CrispExpr::Func(_) => parse_error!("Found unexpected function in list.")
     }
 }
 

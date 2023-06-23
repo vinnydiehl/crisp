@@ -1,4 +1,4 @@
-use crate::{error::CrispError, expr::CrispExpr};
+use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::CrispExpr};
 
 /// Tokenizes a piece of code. `(` and `)` are their own tokens; everything
 /// else is delimited by whitespace.
@@ -20,12 +20,12 @@ pub fn tokenize(str: String) -> Vec<String> {
 /// * `Err(error)` if an error occurs during parsing.
 pub fn parse<'a>(tokens: &'a[String]) -> Result<(CrispExpr, &'a[String]), CrispError> {
     let (head, tail) = tokens.split_first().ok_or_else(||
-        CrispError::Reason("Couldn't get token.".to_string())
+        parse_error_unwrapped!("Couldn't get token.".to_string())
     )?;
 
     match &head[..] {
         "(" => parse_seq(tail),
-        ")" => Err(CrispError::Reason("Unexpected `)`.".to_string())),
+        ")" => parse_error!("Unexpected `)`."),
         _   => Ok((parse_atom(head), tail))
     }
 }
@@ -39,7 +39,7 @@ fn parse_seq<'a>(token_slice: &'a[String]) -> Result<(CrispExpr, &'a[String]), C
 
     loop {
         let (head, tail) = tokens.split_first().ok_or_else(||
-            CrispError::Reason("Couldn't find closing `)`.".to_string())
+            parse_error_unwrapped!("Couldn't find closing `)`.")
         )?;
 
         if head == ")" {
@@ -59,7 +59,7 @@ fn parse_atom(token: &str) -> CrispExpr {
         "true" => CrispExpr::Bool(true),
         "false" => CrispExpr::Bool(false),
         _ => token.parse().map(CrispExpr::Number)
-                          .unwrap_or_else(|_| CrispExpr::Symbol(token.to_string()))
+                          .unwrap_or_else(|_| sym!(token))
     }
 }
 

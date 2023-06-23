@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::error::CrispError;
+use crate::error::{CrispError, type_error};
 
 #[derive(Clone)]
 pub enum CrispExpr {
@@ -56,7 +56,7 @@ impl FromCrispExpr for f64 {
     fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
         match expr {
             CrispExpr::Number(n) => Ok(*n),
-            _ => Err(CrispError::Reason("Expected a number.".to_string())),
+            _ => type_error!("Number"),
         }
     }
 }
@@ -65,7 +65,7 @@ impl FromCrispExpr for bool {
     fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
         match expr {
             CrispExpr::Bool(b) => Ok(*b),
-            _ => Err(CrispError::Reason("Expected a boolean.".to_string())),
+            _ => type_error!("Bool"),
         }
     }
 }
