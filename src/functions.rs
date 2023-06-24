@@ -1,4 +1,4 @@
-use crate::{error::{CrispError, argument_error}, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
+use crate::{error::{CrispError, check_argument_error}, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
 
 // Math operators
 
@@ -25,7 +25,7 @@ pub fn modulus (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
 // Boolean operators
 
 pub fn eq(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
-    argument_error!(args, 2, -1);
+    check_argument_error!(args, 2, -1);
 
     let first_value = extract_value::<f64>(args.first().unwrap())?;
 
@@ -36,7 +36,7 @@ pub fn eq(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
 macro_rules! fold_compare {
     ($f:expr) => {{
         |args: &[CrispExpr]| ->  Result<CrispExpr, CrispError> {
-            argument_error!(args, 2, -1);
+            check_argument_error!(args, 2, -1);
 
             let mut prev_value = extract_value::<f64>(args.first().unwrap())?;
 
@@ -81,7 +81,7 @@ where
     T: IntoCrispExpr,
     U: FromCrispExpr + Copy
 {
-    argument_error!(args, 1, -1);
+    check_argument_error!(args, 1, -1);
 
     Ok(T::into_crisp_expr(
         extract_list::<U>(args)?.iter().fold(init, |acc: T, &n: &U| operation(acc, n))
@@ -91,7 +91,7 @@ where
 fn list_foldl1<T>(args: &[CrispExpr],
                   mut operation: impl FnMut(T, T) -> T) -> Result<CrispExpr, CrispError>
 where T: FromCrispExpr + IntoCrispExpr + Copy {
-    argument_error!(args, 2, -1);
+    check_argument_error!(args, 2, -1);
 
     let numbers = extract_list::<T>(args)?;
     let (first, rest) = numbers.split_first().unwrap();

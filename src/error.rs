@@ -41,6 +41,20 @@ impl fmt::Display for CrispError {
 }
 
 macro_rules! argument_error {
+    (-1, $max:expr) => {
+        Err(CrispError::ArgumentError(-1, $max))
+    };
+
+    ($min:expr, -1) => {
+        Err(CrispError::ArgumentError($min, -1))
+    };
+
+    ($min:expr, $max:expr) => {
+        Err(CrispError::ArgumentError($min, $max))
+    };
+}
+
+macro_rules! check_argument_error {
     ($args:expr, -1, $max:expr) => {
         if $args.len() > $max {
             return Err(CrispError::ArgumentError(-1, $max));
@@ -61,6 +75,7 @@ macro_rules! argument_error {
 }
 
 pub(crate) use argument_error;
+pub(crate) use check_argument_error;
 
 macro_rules! generate_error_macro {
     ($macro_name:ident, $error_variant:ident) => {

@@ -1,12 +1,12 @@
 use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::CrispExpr,
-            env::CrispEnv, keywords::eval_keyword};
+            env::{CrispEnv, env_get, env_new_for_lambda}, keywords::eval_keyword};
 
 pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     match expr {
         // It's a symbol, check the environment for it
-        CrispExpr::Symbol(key) => env.data.get(key)
-            .ok_or_else(|| parse_error_unwrapped!(format!("Unexpected symbol: {}", key)))
-            .map(|v| v.clone()),
+        CrispExpr::Symbol(name) => env_get(name, env).ok_or_else(||
+            parse_error_unwrapped!(format!("Could not find symbol: {}", name))
+        ),
 
         // It's a number or a bool, send it
         CrispExpr::Number(_) => Ok(expr.clone()),
@@ -23,12 +23,15 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
                 None => {
                     let first_eval = eval(head, env)?;
                     match first_eval {
-                        CrispExpr::Func(f) => {
-                            let args_eval: Result<Vec<_>, _> = args.iter()
-                                                                   .map(|a| eval(a, env))
-                                                                   .collect();
-                            f(&args_eval?)
+                        CrispExpr::Func(func) => func(&eval_across_list(args, env)?),
+
+                        CrispExpr::Lambda(lambda) => {
+                            eval(
+                                &lambda.func,
+                                &mut env_new_for_lambda(lambda.args, args, env)?
+                            )
                         },
+
                         _ => parse_error!("List must begin with a function.")
                     }
                 }
@@ -36,8 +39,16 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
         },
 
         // Sorry, no infix functions yet :(
-        CrispExpr::Func(_) => parse_error!("Found unexpected function in list.")
+        CrispExpr::Func(_) => parse_error!("Found unexpected function in list."),
+        CrispExpr::Lambda(_) => parse_error!("Found unexpected lambda in list.")
     }
+}
+
+pub fn eval_across_list(
+    args: &[CrispExpr],
+    env: &mut CrispEnv
+) -> Result<Vec<CrispExpr>, CrispError> {
+    args.iter().map(|a| eval(a, env)).collect()
 }
 
 #[cfg(test)]

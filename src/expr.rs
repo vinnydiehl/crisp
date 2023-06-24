@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, rc::Rc};
 
 use crate::error::{CrispError, type_error};
 
@@ -8,7 +8,14 @@ pub enum CrispExpr {
     Number(f64),
     Bool(bool),
     List(Vec<CrispExpr>),
-    Func(fn(&[CrispExpr]) -> Result<CrispExpr, CrispError>)
+    Func(fn(&[CrispExpr]) -> Result<CrispExpr, CrispError>),
+    Lambda(CrispLambda)
+}
+
+#[derive(Clone)]
+pub struct CrispLambda {
+    pub args: Rc<CrispExpr>,
+    pub func: Rc<CrispExpr>
 }
 
 impl PartialEq for CrispExpr {
@@ -19,8 +26,6 @@ impl PartialEq for CrispExpr {
             (CrispExpr::Number(n1), CrispExpr::Number(n2)) => n1 == n2,
             (CrispExpr::List(l1), CrispExpr::List(l2)) => l1 == l2,
             (CrispExpr::Bool(b1), CrispExpr::Bool(b2)) => b1 == b2,
-            // Functions are not comparable
-            (CrispExpr::Func(_), CrispExpr::Func(_)) => false,
             _ => false
         }
     }
@@ -41,7 +46,8 @@ impl fmt::Display for CrispExpr {
             CrispExpr::List(list) => format!("({})",
                 list.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(",")
             ),
-            CrispExpr::Func(_) => "Function {}".to_string()
+            CrispExpr::Func(_) => "<Func>".to_string(),
+            CrispExpr::Lambda(_) => "<Lambda>".to_string()
         };
 
         write!(f, "{}", str)

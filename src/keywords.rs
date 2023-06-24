@@ -1,5 +1,7 @@
-use crate::{error::{CrispError, argument_error, type_error},
-            expr::CrispExpr, env::CrispEnv, eval::eval};
+use std::rc::Rc;
+
+use crate::{error::{CrispError, check_argument_error, type_error},
+            expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
 
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                 env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
@@ -8,6 +10,7 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
             match s.as_ref() {
                 "if" => Some(eval_if(args, env)),
                 "let" => Some(eval_let(args, env)),
+                "\\" => Some(eval_lambda(args)),
                 _ => None
             }
         },
@@ -16,7 +19,7 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
 }
 
 fn eval_if(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
-    argument_error!(args, 3, 3);
+    check_argument_error!(args, 3, 3);
 
     match eval(args.first().unwrap(), env)? {
         CrispExpr::Bool(b) => {
@@ -33,7 +36,7 @@ fn eval_if(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispErr
 }
 
 fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
-    argument_error!(args, 2, 2);
+    check_argument_error!(args, 2, 2);
 
     let name_sym = args.first().unwrap();
     let name = match name_sym {
@@ -46,6 +49,15 @@ fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispEr
     env.data.insert(name, value.clone());
 
     Ok(value.clone())
+}
+
+fn eval_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 2, 2);
+
+    Ok(CrispExpr::Lambda(CrispLambda {
+        args: Rc::new(args.first().unwrap().clone()),
+        func: Rc::new(args.get(1).unwrap().clone())
+    }))
 }
 
 #[cfg(test)]
@@ -213,5 +225,88 @@ mod tests {
         eval_let(&list, &mut env).unwrap();
 
         assert_eq!(eval(&sym!("foo"), &mut env).unwrap(), Number(5.0));
+    }
+
+    // Lambdas
+
+    #[test]
+    fn test_lambda_set_to_var() {
+        let mut env = initialize_environment();
+        let list = list![
+            sym!("let"),
+            sym!("double"),
+            list![
+                sym!("\\"),
+                list![
+                    sym!("a")
+                ],
+                list![
+                    sym!("*"),
+                    sym!("a"),
+                    Number(2.0)
+                ]
+            ]
+        ];
+        eval(&list, &mut env).unwrap();
+
+        let call = list![
+            sym!("double"),
+            Number(5.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(10.0));
+    }
+
+    #[test]
+    fn test_lambda_multiple_args() {
+        let mut env = initialize_environment();
+        let list = list![
+            sym!("let"),
+            sym!("add"),
+            list![
+                sym!("\\"),
+                list![
+                    sym!("a"),
+                    sym!("b")
+                ],
+                list![
+                    sym!("+"),
+                    sym!("a"),
+                    sym!("b")
+                ]
+            ]
+        ];
+        eval(&list, &mut env).unwrap();
+
+        let call = list![
+            sym!("add"),
+            Number(5.0),
+            Number(6.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(11.0));
+    }
+
+    #[test]
+    fn test_lambda_list_head() {
+        let mut env = initialize_environment();
+        let call = list![
+            list![
+                sym!("\\"),
+                list![
+                    sym!("a"),
+                    sym!("b")
+                ],
+                list![
+                    sym!("+"),
+                    sym!("a"),
+                    sym!("b")
+                ]
+            ],
+            Number(4.0),
+            Number(2.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(6.0));
     }
 }
