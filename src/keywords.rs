@@ -309,4 +309,66 @@ mod tests {
 
         assert_eq!(eval(&call, &mut env).unwrap(), Number(6.0));
     }
+
+    #[test]
+    fn test_lambda_list_err() {
+        // Number as single arg (occurs on instantiation)
+        let mut env = initialize_environment();
+        let call = list![
+            sym!("\\"),
+            Number(3.0),
+            list![
+                sym!("+"),
+                sym!("a"),
+                sym!("b")
+            ]
+        ];
+
+        assert!(eval(&call, &mut env).is_err());
+
+        // Symbol in args list (occurs at lambda call)
+        let mut env = initialize_environment();
+        let call = list![
+            list![
+                sym!("\\"),
+                list![
+                    Number(3.0),
+                    sym!("b")
+                ],
+                list![
+                    sym!("+"),
+                    sym!("a"),
+                    sym!("b")
+                ]
+            ],
+            Number(4.0),
+            Number(2.0)
+        ];
+
+        assert!(eval(&call, &mut env).is_err());
+
+        // Too few args
+        let mut env = initialize_environment();
+        let call = list![
+            sym!("\\"),
+            Number(3.0)
+        ];
+
+        assert!(eval(&call, &mut env).is_err());
+
+        // Too many args
+        let mut env = initialize_environment();
+        let call = list![
+            sym!("\\"),
+            Number(3.0),
+            list![
+                sym!("+"),
+                sym!("a"),
+                sym!("b")
+            ],
+            Bool(true)
+        ];
+
+        assert!(eval(&call, &mut env).is_err());
+    }
 }
