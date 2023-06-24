@@ -2,7 +2,11 @@ use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::Crisp
 
 /// Tokenizes a piece of code. `(` and `)` are their own tokens; everything
 /// else is delimited by whitespace.
-pub fn tokenize(str: String) -> Vec<String> {
+pub fn tokenize(mut str: String) -> Vec<String> {
+    if !str.trim().starts_with("(") {
+        str = format!("({})", str);
+    }
+
     // Force whitespace around parens
     str.replace("(", " ( ")
        .replace(")", " ) ")
@@ -80,6 +84,18 @@ mod tests {
                    vec!["(", ")"]);
 
         assert_eq!(tokenize("(* 5\n    (+ 3 2))".to_string()),
+                   vec!["(", "*", "5", "(", "+", "3", "2", ")", ")"]);
+    }
+
+    #[test]
+    fn test_tokenize_no_outer_parens() {
+        assert_eq!(tokenize("+ 3 var".to_string()),
+                   vec!["(", "+", "3", "var", ")"]);
+
+        assert_eq!(tokenize("* 5 2".to_string()),
+                   vec!["(", "*", "5", "2", ")"]);
+
+        assert_eq!(tokenize("* 5\n    (+ 3 2)".to_string()),
                    vec!["(", "*", "5", "(", "+", "3", "2", ")", ")"]);
     }
 
