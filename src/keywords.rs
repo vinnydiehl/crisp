@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{error::{CrispError, check_argument_error, type_error},
-            expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
+            expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval, macros::list};
 
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                 env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
@@ -54,9 +54,16 @@ fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispEr
 fn eval_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
+    let a = args.first().unwrap().clone();
+    let arg_list = match a {
+        CrispExpr::List(_) => a,
+        CrispExpr::Symbol(_) => list![a],
+        _ => return type_error!("Lambda expected a Symbol or List of Symbols for arguments."),
+    };
+
     Ok(CrispExpr::Lambda(CrispLambda {
-        args: Rc::new(args.first().unwrap().clone()),
-        func: Rc::new(args.get(1).unwrap().clone())
+        args: Rc::new(arg_list),
+        func: Rc::new(args.get(1).unwrap().clone()),
     }))
 }
 
@@ -240,6 +247,34 @@ mod tests {
                 list![
                     sym!("a")
                 ],
+                list![
+                    sym!("*"),
+                    sym!("a"),
+                    Number(2.0)
+                ]
+            ]
+        ];
+        eval(&list, &mut env).unwrap();
+
+        let call = list![
+            sym!("double"),
+            Number(5.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(10.0));
+    }
+
+    #[test]
+    fn test_lambda_single_arg() {
+        // Tests passing a symbol rather than a list of symbols
+
+        let mut env = initialize_environment();
+        let list = list![
+            sym!("let"),
+            sym!("double"),
+            list![
+                sym!("\\"),
+                sym!("a"),
                 list![
                     sym!("*"),
                     sym!("a"),
