@@ -4,13 +4,14 @@ use crate::{error::{CrispError, check_argument_error, type_error},
             expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval, macros::list};
 
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
-                env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
+                    env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
     match expr {
         CrispExpr::Symbol(s) => {
             match s.as_ref() {
                 "if" => Some(eval_if(args, env)),
                 "let" => Some(eval_let(args, env)),
                 "\\" => Some(eval_lambda(args)),
+                "fn" => Some(eval_fn(args, env)),
                 _ => None
             }
         },
@@ -45,7 +46,6 @@ fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispEr
     }?;
 
     let value = eval(args.get(1).unwrap(), env)?;
-
     env.data.insert(name, value.clone());
 
     Ok(value.clone())
@@ -58,13 +58,29 @@ fn eval_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     let arg_list = match a {
         CrispExpr::List(_) => a,
         CrispExpr::Symbol(_) => list![a],
-        _ => return type_error!("Lambda expected a Symbol or List of Symbols for arguments."),
+        _ => return type_error!("Symbol || List<Symbol>"),
     };
 
     Ok(CrispExpr::Lambda(CrispLambda {
         args: Rc::new(arg_list),
         func: Rc::new(args.get(1).unwrap().clone()),
     }))
+}
+
+fn eval_fn(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 3, 3);
+
+    let (head, tail) = args.split_first().unwrap();
+
+    let name = match head {
+        CrispExpr::Symbol(s) => s.clone(),
+        _ => return type_error!("Symbol")
+    };
+
+    let lambda = eval_lambda(tail)?;
+    env.data.insert(name, lambda.clone());
+
+    Ok(lambda.clone())
 }
 
 #[cfg(test)]
@@ -405,5 +421,57 @@ mod tests {
         ];
 
         assert!(eval(&call, &mut env).is_err());
+    }
+
+    // fn keyword
+
+    #[test]
+    fn test_fn_single_arg() {
+        let mut env = initialize_environment();
+        let list = list![
+            sym!("fn"),
+            sym!("double"),
+            sym!("a"),
+            list![
+                sym!("*"),
+                sym!("a"),
+                Number(2.0)
+            ]
+        ];
+        eval(&list, &mut env).unwrap();
+
+        let call = list![
+            sym!("double"),
+            Number(5.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(10.0));
+    }
+
+    #[test]
+    fn test_fn_multiple_args() {
+        let mut env = initialize_environment();
+        let list = list![
+            sym!("fn"),
+            sym!("add"),
+            list![
+                sym!("a"),
+                sym!("b")
+            ],
+            list![
+                sym!("+"),
+                sym!("a"),
+                sym!("b")
+            ]
+        ];
+        eval(&list, &mut env).unwrap();
+
+        let call = list![
+            sym!("add"),
+            Number(5.0),
+            Number(4.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(9.0));
     }
 }
