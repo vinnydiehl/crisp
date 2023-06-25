@@ -5,6 +5,7 @@ use crate::error::{CrispError, type_error};
 #[derive(Clone)]
 pub enum CrispExpr {
     Symbol(String),
+    CrispString(String),
     Number(f64),
     Bool(bool),
     List(Vec<CrispExpr>),
@@ -23,6 +24,7 @@ impl PartialEq for CrispExpr {
         // Implement your own equality logic here
         match (self, other) {
             (CrispExpr::Symbol(s1), CrispExpr::Symbol(s2)) => s1 == s2,
+            (CrispExpr::CrispString(s1), CrispExpr::CrispString(s2)) => s1 == s2,
             (CrispExpr::Number(n1), CrispExpr::Number(n2)) => n1 == n2,
             (CrispExpr::List(l1), CrispExpr::List(l2)) => l1 == l2,
             (CrispExpr::Bool(b1), CrispExpr::Bool(b2)) => b1 == b2,
@@ -41,6 +43,7 @@ impl fmt::Display for CrispExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = match self {
             CrispExpr::Symbol(s) => s.clone(),
+            CrispExpr::CrispString(s) => s.clone(),
             CrispExpr::Number(n) => n.to_string(),
             CrispExpr::Bool(b) => b.to_string(),
             CrispExpr::List(list) => format!("({})",

@@ -1,5 +1,7 @@
 use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::CrispExpr};
 
+use snailquote::unescape;
+
 /// Tokenizes a piece of code. `(` and `)` are their own tokens; everything
 /// else is delimited by whitespace.
 pub fn tokenize(mut input: String) -> Vec<String> {
@@ -82,7 +84,7 @@ pub fn parse<'a>(tokens: &'a[String]) -> Result<(CrispExpr, &'a[String]), CrispE
     match &head[..] {
         "(" => parse_seq(tail),
         ")" => parse_error!("Unexpected `)`."),
-        _   => Ok((parse_atom(head), tail))
+        _   => Ok((parse_atom(head)?, tail))
     }
 }
 
@@ -110,13 +112,22 @@ fn parse_seq<'a>(token_slice: &'a[String]) -> Result<(CrispExpr, &'a[String]), C
 }
 
 /// Parses an atom out of an individual token.
-fn parse_atom(token: &str) -> CrispExpr {
-    match token.as_ref() {
+fn parse_atom(token: &str) -> Result<CrispExpr, CrispError> {
+    let expr = match token.as_ref() {
         "true" => CrispExpr::Bool(true),
         "false" => CrispExpr::Bool(false),
-        _ => token.parse().map(CrispExpr::Number)
-                          .unwrap_or_else(|_| sym!(token))
-    }
+        _ => {
+            if token.chars().next().unwrap() == '"' {
+                unescape(token).map(CrispExpr::CrispString)
+                               .map_err(|_| parse_error_unwrapped!("Invalid string."))?
+            } else {
+                token.parse().map(CrispExpr::Number)
+                             .unwrap_or_else(|_| sym!(token))
+            }
+        }
+    };
+
+    Ok(expr)
 }
 
 #[cfg(test)]
@@ -129,7 +140,7 @@ mod tests {
         assert_eq!(tokenize("(+ 3 var)".to_string()),
                    vec!["(", "+", "3", "var", ")"]);
 
-        assert_eq!(tokenize("(* 5 2)".to_string()),
+        assert_eq!(tokenize("   (* 5 2)".to_string()),
                    vec!["(", "*", "5", "2", ")"]);
 
         assert_eq!(tokenize("()".to_string()),
@@ -182,11 +193,26 @@ mod tests {
 
     #[test]
     fn test_parse_atom() {
-        assert_eq!(parse_atom("+"),
-                   Symbol("+".to_string()));
+        assert_eq!(parse_atom("+").unwrap(),
+                   sym!("+"));
 
-        assert_eq!(parse_atom("3.14"),
+        assert_eq!(parse_atom("3.14").unwrap(),
                    Number(3.14));
+    }
+
+    #[test]
+    fn test_parse_string() {
+        assert_eq!(parse_atom("\"foo\"").unwrap(),
+                   str!("foo"));
+
+        assert_eq!(parse_atom("\"foo bar\"").unwrap(),
+                   str!("foo bar"));
+
+        assert_eq!(parse_atom("\"foo\n\t\rbar\"").unwrap(),
+                   str!("foo\n\t\rbar"));
+
+        assert_eq!(parse_atom("\"Pok\\u{00e9}mon\"").unwrap(),
+                   str!("Pok\u{00e9}mon"));
     }
 
     #[test]

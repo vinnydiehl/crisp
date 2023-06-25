@@ -1,3 +1,9 @@
+macro_rules! str {
+    ($name:expr) => {
+        CrispExpr::CrispString($name.to_string())
+    }
+}
+
 macro_rules! sym {
     ($name:expr) => {
         CrispExpr::Symbol($name.to_string())

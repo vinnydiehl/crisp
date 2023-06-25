@@ -8,7 +8,8 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
             parse_error_unwrapped!(format!("Could not find symbol: {}", name))
         ),
 
-        // It's a number or a bool, send it
+        // It's a string, number, or bool, send it
+        CrispExpr::CrispString(_) => Ok(expr.clone()),
         CrispExpr::Number(_) => Ok(expr.clone()),
         CrispExpr::Bool(_) => Ok(expr.clone()),
 
