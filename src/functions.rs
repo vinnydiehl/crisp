@@ -1,4 +1,25 @@
-use crate::{error::{CrispError, check_argument_error}, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
+use crate::{error::{CrispError, argument_error, check_argument_error},
+            expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
+
+pub fn puts(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    if let Some((str, _format_args)) = args.split_first() {
+        // TODO: Impelement format args. No point in doing that now, with no strings.
+        println!("{}", str);
+        return Ok(str.clone());
+    }
+
+    argument_error!(1, -1)
+}
+
+pub fn print(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    if let Some((str, _format_args)) = args.split_first() {
+        // TODO: Impelement format args.
+        print!("{}", str);
+        return Ok(str.clone());
+    }
+
+    argument_error!(1, -1)
+}
 
 // Math operators
 

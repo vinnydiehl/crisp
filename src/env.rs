@@ -18,6 +18,9 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
         }
     }
 
+    add_function!("puts", puts);
+    add_function!("print", print);
+
     add_function!("+", add);
     add_function!("-", sub);
     add_function!("*", mult);
