@@ -1,7 +1,8 @@
-use std::{io::{ self, BufRead, Write }, collections::hash_map::Entry};
-
 use crate::{env::{CrispEnv, initialize_environment}, error::CrispError,
             eval::eval, expr::CrispExpr, reader::{parse, tokenize}};
+
+use snailquote::escape;
+use std::{io::{ self, BufRead, Write }, collections::hash_map::Entry};
 
 pub fn run() {
     let stdin = io::stdin();
@@ -45,7 +46,13 @@ pub fn run() {
         match send(line, env) {
             Ok(ret) => {
                 match ret {
-                    CrispExpr::CrispString(_) => println!("=> \"{}\"", ret),
+                    CrispExpr::CrispString(str) => {
+                        let s = match escape(&str) {
+                            escaped if escaped == str => format!("'{}'", escaped),
+                            escaped => escaped.to_string()
+                        };
+                        println!("=> {}", s);
+                    }
                     _ => println!("=> {}", ret)
                 }
             }
