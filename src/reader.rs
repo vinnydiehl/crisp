@@ -17,7 +17,7 @@ pub fn tokenize(mut input: String) -> Vec<String> {
     for ch in input.chars() {
         if in_string {
             match ch {
-                '"' if current_token.chars().last().unwrap() != '\\' => {
+                '"' | '\'' if current_token.chars().last().unwrap() != '\\' => {
                     current_token.push(ch);
                     tokens.push(current_token.clone());
                     current_token.clear();
@@ -29,7 +29,7 @@ pub fn tokenize(mut input: String) -> Vec<String> {
             }
         } else {
             match ch {
-                '"' => {
+                '"' | '\'' => {
                     in_string = true;
                     current_token.push(ch);
                 },
@@ -117,7 +117,7 @@ fn parse_atom(token: &str) -> Result<CrispExpr, CrispError> {
         "true" => CrispExpr::Bool(true),
         "false" => CrispExpr::Bool(false),
         _ => {
-            if token.chars().next().unwrap() == '"' {
+            if token.starts_with('"') || token.starts_with('\'') {
                 unescape(token).map(CrispExpr::CrispString)
                                .map_err(|_| parse_error_unwrapped!("Invalid string."))?
             } else {
@@ -167,6 +167,9 @@ mod tests {
         assert_eq!(tokenize("(\"foo (bar) baz\")".to_string()),
                    vec!["(", "\"foo (bar) baz\"", ")"]);
 
+        assert_eq!(tokenize("('foo' '(bar) baz')".to_string()),
+                   vec!["(", "'foo'", "'(bar) baz'", ")"]);
+
         // `tokenize()` does not unescape the strings:
 
         assert_eq!(tokenize("(\"foo \\\"(bar)\\\" baz\")".to_string()),
@@ -213,6 +216,9 @@ mod tests {
 
         assert_eq!(parse_atom("\"Pok\\u{00e9}mon\"").unwrap(),
                    str!("Pok\u{00e9}mon"));
+
+        assert_eq!(parse_atom("'foo\n\t\r  bar'").unwrap(),
+                   str!("foo\n\t\r  bar"));
     }
 
     #[test]
@@ -234,9 +240,11 @@ mod tests {
 
     #[test]
     fn test_parse_multi() {
-        let tokens = vec!["(", "+", "5", "(", "*", "3", "2", ")", "2", ")"].into_iter()
-                                                                      .map(String::from)
-                                                                      .collect::<Vec<String>>();
+        let tokens = vec!["(", "+", "5", "(", "*", "3", "2", ")", "2", ")"]
+            .into_iter()
+            .map(String::from)
+            .collect::<Vec<String>>();
+
         let (expr, remaining_tokens) = parse(&tokens).unwrap();
 
         assert_eq!(expr, list![
