@@ -43,7 +43,12 @@ pub fn run() {
         }
 
         match send(line, env) {
-            Ok(ret) => println!("=> {}", ret),
+            Ok(ret) => {
+                match ret {
+                    CrispExpr::CrispString(_) => println!("=> \"{}\"", ret),
+                    _ => println!("=> {}", ret)
+                }
+            }
             Err(e) => println!("{}", e)
         }
     }
