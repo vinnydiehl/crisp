@@ -2,17 +2,69 @@ use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::Crisp
 
 /// Tokenizes a piece of code. `(` and `)` are their own tokens; everything
 /// else is delimited by whitespace.
-pub fn tokenize(mut str: String) -> Vec<String> {
-    if !str.trim().starts_with("(") {
-        str = format!("({})", str);
+pub fn tokenize(mut input: String) -> Vec<String> {
+    // Allow outer parens to be left off
+    if !input.trim().starts_with("(") {
+        input = format!("({})", input);
     }
 
-    // Force whitespace around parens
-    str.replace("(", " ( ")
-       .replace(")", " ) ")
-       .split_whitespace()
-       .map(|x| x.to_string())
-       .collect()
+    let mut tokens = Vec::new();
+    let mut current_token = String::new();
+    let mut in_string = false;
+
+    for ch in input.chars() {
+        if in_string {
+            match ch {
+                '"' if current_token.chars().last().unwrap() != '\\' => {
+                    current_token.push(ch);
+                    tokens.push(current_token.clone());
+                    current_token.clear();
+                    in_string = false;
+                },
+
+                // Otherwise, just a normal character
+                _ => current_token.push(ch)
+            }
+        } else {
+            match ch {
+                '"' => {
+                    in_string = true;
+                    current_token.push(ch);
+                },
+
+                ' ' | '\n' | '\t' => {
+                    // End of non-string token
+                    if !current_token.is_empty() {
+                        tokens.push(current_token.clone());
+                        current_token.clear();
+                    }
+                },
+
+                '(' => {
+                    // End of non-string token
+                    if !current_token.is_empty() {
+                        tokens.push(current_token.clone());
+                        current_token.clear();
+                    }
+                    tokens.push("(".to_string());
+                },
+
+                ')' => {
+                    // End of non-string token
+                    if !current_token.is_empty() {
+                        tokens.push(current_token.clone());
+                        current_token.clear();
+                    }
+                    tokens.push(")".to_string());
+                },
+
+                // Otherwise, we're still mid-token
+                _ => current_token.push(ch)
+            }
+        }
+    }
+
+    tokens
 }
 
 /// Parses an expression from a slice of tokens.
@@ -83,8 +135,37 @@ mod tests {
         assert_eq!(tokenize("()".to_string()),
                    vec!["(", ")"]);
 
-        assert_eq!(tokenize("(* 5\n    (+ 3 2))".to_string()),
+        assert_eq!(tokenize("(* 5\n    (+\t3 2))".to_string()),
                    vec!["(", "*", "5", "(", "+", "3", "2", ")", ")"]);
+    }
+
+    #[test]
+    fn test_tokenize_strings() {
+        assert_eq!(tokenize("(\"foo\")".to_string()),
+                   vec!["(", "\"foo\"", ")"]);
+
+        assert_eq!(tokenize("(test \"foo\" var)".to_string()),
+                   vec!["(", "test", "\"foo\"", "var", ")"]);
+
+        assert_eq!(tokenize("(test \"foo bar\" var)".to_string()),
+                   vec!["(", "test", "\"foo bar\"", "var", ")"]);
+
+        assert_eq!(tokenize("(\"test\" \"foo bar\" \"baz\")".to_string()),
+                   vec!["(", "\"test\"", "\"foo bar\"", "\"baz\"", ")"]);
+
+        assert_eq!(tokenize("(\"foo (bar) baz\")".to_string()),
+                   vec!["(", "\"foo (bar) baz\"", ")"]);
+
+        // `tokenize()` does not unescape the strings:
+
+        assert_eq!(tokenize("(\"foo \\\"(bar)\\\" baz\")".to_string()),
+                   vec!["(", "\"foo \\\"(bar)\\\" baz\"", ")"]);
+
+        assert_eq!(tokenize("(\"foo\\n\\tbar\")".to_string()),
+                   vec!["(", "\"foo\\n\\tbar\"", ")"]);
+
+        assert_eq!(tokenize("(\"Pok\\u{00e9}mon\")".to_string()),
+                   vec!["(", "\"Pok\\u{00e9}mon\"", ")"]);
     }
 
     #[test]
