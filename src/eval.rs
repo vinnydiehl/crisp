@@ -1,4 +1,4 @@
-use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::CrispExpr,
+use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::{CrispExpr, CrispLambda},
             env::{CrispEnv, env_get, env_new_for_lambda}, keywords::eval_keyword};
 
 pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
@@ -15,16 +15,8 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
                     // Is the first item a function? (Func is built-in, Lambda is user-defined)
                     let first_eval = eval(head, env)?;
                     match first_eval {
-                        CrispExpr::Func(func) => func(&eval_across_list(args, env)?),
-
-                        CrispExpr::Lambda(lambda) => {
-                            eval(
-                                &lambda.func,
-                                &mut env_new_for_lambda(lambda.args,
-                                                        &eval_across_list(args, env)?,
-                                                        env)?
-                            )
-                        },
+                        CrispExpr::Func(func) => func(&eval_across_list(args, env)?, env),
+                        CrispExpr::Lambda(lambda) => eval_lambda(lambda, args, env),
 
                         // None of the above, evaluate everything and send it
                         _ => Ok(CrispExpr::List(eval_across_list(&list[..], env)?))
@@ -53,6 +45,15 @@ pub fn eval_across_list(
     env: &mut CrispEnv
 ) -> Result<Vec<CrispExpr>, CrispError> {
     args.iter().map(|a| eval(a, env)).collect()
+}
+
+pub fn eval_lambda(
+    lambda: CrispLambda,
+    args: &[CrispExpr],
+    env: &mut CrispEnv
+) -> Result<CrispExpr, CrispError> {
+    eval(&lambda.func,
+         &mut env_new_for_lambda(lambda.args, &eval_across_list(args, env)?, env)?)
 }
 
 #[cfg(test)]

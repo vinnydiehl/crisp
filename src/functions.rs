@@ -1,9 +1,9 @@
-use crate::{error::{CrispError, argument_error, check_argument_error},
-            expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
+use crate::{error::{CrispError, argument_error, check_argument_error, type_error},
+            expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}, env::CrispEnv, eval::eval_lambda};
 
 use dyn_fmt::AsStrFormatExt;
 
-pub fn crisp_format(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn crisp_format(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     if let Some((format_str, format_args)) = args.split_first() {
         return Ok(str!(match format_args {
             [] => format!("{}", format_str),
@@ -14,15 +14,15 @@ pub fn crisp_format(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     argument_error!(1, -1)
 }
 
-pub fn puts(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
-    let value = crisp_format(args)?;
+pub fn puts(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    let value = crisp_format(args, env)?;
     println!("{}", value);
 
     Ok(value)
 }
 
-pub fn print(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
-    let value = crisp_format(args)?;
+pub fn print(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    let value = crisp_format(args, env)?;
     print!("{}", value);
 
     Ok(value)
@@ -30,29 +30,29 @@ pub fn print(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
 
 // Math operators
 
-pub fn add(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn add(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc + n)
 }
 
-pub fn sub(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn sub(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc - n)
 }
 
-pub fn mult(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn mult(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc * n)
 }
 
-pub fn div(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn div(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc / n)
 }
 
-pub fn modulus(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn modulus(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc % n)
 }
 
 // Boolean operators
 
-pub fn eq(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, -1);
 
     let first_value = extract_value::<f64>(args.first().unwrap())?;
@@ -77,19 +77,19 @@ macro_rules! fold_compare {
     }};
 }
 
-pub fn gt(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn gt(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     fold_compare!(|a, b| a < b)(args)
 }
 
-pub fn gte(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn gte(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     fold_compare!(|a, b| a <= b)(args)
 }
 
-pub fn lt(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn lt(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     fold_compare!(|a, b| a > b)(args)
 }
 
-pub fn lte(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn lte(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     fold_compare!(|a, b| a >= b)(args)
 }
 
@@ -101,6 +101,35 @@ where T: FromCrispExpr {
 fn extract_list<T>(list: &[CrispExpr]) -> Result<Vec<T>, CrispError>
 where T: FromCrispExpr {
     list.iter().map(|expr| extract_value::<T>(expr)).collect()
+}
+
+pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 2, 2);
+
+    match args.first().unwrap() {
+        CrispExpr::Lambda(lambda) => {
+            let n_args = match lambda.args.as_ref() {
+                CrispExpr::Symbol(_) => 1,
+                CrispExpr::List(list) => list.len(),
+                _ => return type_error!("Symbol || List<Symbol>")
+            };
+
+            match args.get(1).unwrap() {
+                CrispExpr::List(list) => {
+                    let mut result = Vec::new();
+                    for chunk in list.chunks(n_args) {
+                        result.push(eval_lambda(lambda.clone(), chunk, env)?);
+                    }
+
+                    Ok(CrispExpr::List(result))
+                },
+
+                _ => type_error!("List")
+            }
+        },
+
+        _ => type_error!("Lambda")
+    }
 }
 
 fn list_foldl<T, U>(args: &[CrispExpr], init: T,
@@ -132,27 +161,29 @@ where T: FromCrispExpr + IntoCrispExpr + Copy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expr::CrispExpr::*};
+    use crate::{expr::CrispExpr::*, env::initialize_environment, eval::eval};
 
     #[test]
     fn test_format() {
+        let mut env = initialize_environment();
+
         let result = crisp_format(&vec![
             str!("test")
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test"));
 
         let result = crisp_format(&vec![
             str!("test: {}"),
             str!("foo")
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test: foo"));
 
         let result = crisp_format(&vec![
             str!("test: {}"),
             Number(123.0)
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test: 123"));
 
@@ -160,7 +191,7 @@ mod tests {
             str!("{}{}"),
             Number(1.0),
             Number(2.0)
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("12"));
 
@@ -169,17 +200,19 @@ mod tests {
             str!("1"),
             Number(2.0),
             Bool(true),
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("1 a 2 b true"));
     }
 
     #[test]
     fn test_format_escape() {
+        let mut env = initialize_environment();
+
         let result = crisp_format(&vec![
             str!("{{}}"),
             Number(42.0)
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("{}"));
 
@@ -187,45 +220,49 @@ mod tests {
             str!("{}{{}}{}"),
             Number(24.0),
             Number(42.0)
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("24{}42"));
 
         let result = crisp_format(&vec![
             str!("test {{ escaped braces }} {{:3}}"),
             Number(42.0)
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test { escaped braces } {:3}"));
 
         // With no arguments, braces don't need to be escaped
         let result = crisp_format(&vec![
             str!("test {{ escaped braces }} {{:3}}"),
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test {{ escaped braces }} {{:3}}"));
     }
 
     #[test]
     fn test_format_too_many_args() {
+        let mut env = initialize_environment();
+
         // It should discard the superfluous args
         let result = crisp_format(&vec![
             str!("test: {}"),
             str!("foo"),
             str!("bar"),
             str!("baz")
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test: foo"));
     }
 
     #[test]
     fn test_format_too_few_args() {
+        let mut env = initialize_environment();
+
         // It should fill in left-to-right and leave the remaining braces
         let result = crisp_format(&vec![
             str!("test: {} {} {}"),
             str!("foo")
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test: foo  "));
 
@@ -233,7 +270,7 @@ mod tests {
             str!("test: {} {} {}"),
             str!("foo"),
             str!("bar")
-        ]).unwrap();
+        ], &mut env).unwrap();
 
         assert_eq!(result, str!("test: foo bar "));
     }
@@ -242,81 +279,122 @@ mod tests {
 
     #[test]
     fn test_add() {
-        crisp_assert_eq!(add(&num_list![6.0, 9.0]), 15.0);
-        crisp_assert_eq!(add(&num_list![1.0, 2.0, 3.0]), 6.0);
+        let mut env = initialize_environment();
+
+        crisp_assert_eq!(add(&num_list![6.0, 9.0], &mut env), 15.0);
+        crisp_assert_eq!(add(&num_list![1.0, 2.0, 3.0], &mut env), 6.0);
     }
 
     #[test]
     fn test_sub() {
-        crisp_assert_eq!(sub(&num_list![6.0, 9.0]), -3.0);
-        crisp_assert_eq!(sub(&num_list![1.0, 2.0, 3.0]), -4.0);
+        let mut env = initialize_environment();
+
+        crisp_assert_eq!(sub(&num_list![6.0, 9.0], &mut env), -3.0);
+        crisp_assert_eq!(sub(&num_list![1.0, 2.0, 3.0], &mut env), -4.0);
     }
 
     #[test]
     fn test_mult() {
-        crisp_assert_eq!(mult(&num_list![6.0, 9.0]), 54.0);
-        crisp_assert_eq!(mult(&num_list![5.0, 2.0, 3.0]), 30.0);
+        let mut env = initialize_environment();
+
+        crisp_assert_eq!(mult(&num_list![6.0, 9.0], &mut env), 54.0);
+        crisp_assert_eq!(mult(&num_list![5.0, 2.0, 3.0], &mut env), 30.0);
     }
 
     #[test]
     fn test_div() {
-        crisp_assert_eq!(div(&num_list![9.0, 2.0]), 4.5);
-        crisp_assert_eq!(div(&num_list![30.0, 3.0, 2.0]), 5.0);
+        let mut env = initialize_environment();
+
+        crisp_assert_eq!(div(&num_list![9.0, 2.0], &mut env), 4.5);
+        crisp_assert_eq!(div(&num_list![30.0, 3.0, 2.0], &mut env), 5.0);
     }
 
     #[test]
     fn test_mod() {
-        crisp_assert_eq!(modulus(&num_list![9.0, 2.0]), 1.0);
-        crisp_assert_eq!(modulus(&num_list![35.0, 25.0, 6.0]), 4.0);
+        let mut env = initialize_environment();
+
+        crisp_assert_eq!(modulus(&num_list![9.0, 2.0], &mut env), 1.0);
+        crisp_assert_eq!(modulus(&num_list![35.0, 25.0, 6.0], &mut env), 4.0);
     }
 
     // Boolean
 
     #[test]
     fn test_eq() {
-        crisp_assert!(eq(&num_list![5.0, 5.0]));
-        crisp_assert!(eq(&num_list![30.0, 30.0, 30.0]));
+        let mut env = initialize_environment();
 
-        crisp_assert_false!(eq(&num_list![5.0, 4.0]));
-        crisp_assert_false!(eq(&num_list![5.0, 4.0, 5.0]));
+        crisp_assert!(eq(&num_list![5.0, 5.0], &mut env));
+        crisp_assert!(eq(&num_list![30.0, 30.0, 30.0], &mut env));
+
+        crisp_assert_false!(eq(&num_list![5.0, 4.0], &mut env));
+        crisp_assert_false!(eq(&num_list![5.0, 4.0, 5.0], &mut env));
     }
 
     #[test]
     fn test_gt() {
-        crisp_assert!(gt(&num_list![5.0, 4.0]));
-        crisp_assert!(gt(&num_list![4.0, 2.0, 0.0]));
+        let mut env = initialize_environment();
 
-        crisp_assert_false!(gt(&num_list![5.0, 6.0]));
-        crisp_assert_false!(gt(&num_list![4.0, 2.0, 2.0]));
+        crisp_assert!(gt(&num_list![5.0, 4.0], &mut env));
+        crisp_assert!(gt(&num_list![4.0, 2.0, 0.0], &mut env));
+
+        crisp_assert_false!(gt(&num_list![5.0, 6.0], &mut env));
+        crisp_assert_false!(gt(&num_list![4.0, 2.0, 2.0], &mut env));
     }
 
     #[test]
     fn test_gte() {
-        crisp_assert!(gte(&num_list![5.0, 4.0]));
-        crisp_assert!(gte(&num_list![4.0, 2.0, 0.0]));
-        crisp_assert!(gte(&num_list![4.0, 2.0, 2.0, 1.5]));
+        let mut env = initialize_environment();
 
-        crisp_assert_false!(gte(&num_list![5.0, 6.0]));
-        crisp_assert_false!(gte(&num_list![5.0, 4.0, 2.5, 3.0]));
+        crisp_assert!(gte(&num_list![5.0, 4.0], &mut env));
+        crisp_assert!(gte(&num_list![4.0, 2.0, 0.0], &mut env));
+        crisp_assert!(gte(&num_list![4.0, 2.0, 2.0, 1.5], &mut env));
+
+        crisp_assert_false!(gte(&num_list![5.0, 6.0], &mut env));
+        crisp_assert_false!(gte(&num_list![5.0, 4.0, 2.5, 3.0], &mut env));
     }
 
     #[test]
     fn test_lt() {
-        crisp_assert!(lt(&num_list![5.0, 6.0]));
-        crisp_assert!(lt(&num_list![4.0, 7.0, 10.0]));
+        let mut env = initialize_environment();
 
-        crisp_assert_false!(lt(&num_list![5.0, 1.0]));
-        crisp_assert_false!(lt(&num_list![4.0, 5.0, 5.0]));
+        crisp_assert!(lt(&num_list![5.0, 6.0], &mut env));
+        crisp_assert!(lt(&num_list![4.0, 7.0, 10.0], &mut env));
+
+        crisp_assert_false!(lt(&num_list![5.0, 1.0], &mut env));
+        crisp_assert_false!(lt(&num_list![4.0, 5.0, 5.0], &mut env));
     }
 
     #[test]
     fn test_lte() {
-        crisp_assert!(lte(&num_list![5.0, 6.0]));
-        crisp_assert!(lte(&num_list![4.0, 7.0, 10.0]));
-        crisp_assert!(lte(&num_list![4.0, 5.0, 5.0, 5.5]));
+        let mut env = initialize_environment();
 
-        crisp_assert_false!(lte(&num_list![5.0, 1.0]));
-        crisp_assert_false!(lte(&num_list![5.0, 7.0, 8.0, 7.5]));
+        crisp_assert!(lte(&num_list![5.0, 6.0], &mut env));
+        crisp_assert!(lte(&num_list![4.0, 7.0, 10.0], &mut env));
+        crisp_assert!(lte(&num_list![4.0, 5.0, 5.0, 5.5], &mut env));
+
+        crisp_assert_false!(lte(&num_list![5.0, 1.0], &mut env));
+        crisp_assert_false!(lte(&num_list![5.0, 7.0, 8.0, 7.5], &mut env));
+    }
+
+    #[test]
+    fn test_map() {
+        let mut env = initialize_environment();
+        let args = vec![
+            // TODO: Better Way to make lambdas for testing
+            eval(&list![
+                sym!("\\"),
+                sym!("a"),
+                list![
+                    sym!("*"),
+                    sym!("a"),
+                    Number(2.0)
+                ]
+            ], &mut env).unwrap(),
+            List(num_list![2.0, 3.0, 4.0])
+        ];
+
+        assert_eq!(crisp_map(&args, &mut env).unwrap(),
+                   List(num_list![4.0, 6.0, 8.0]));
     }
 
     #[test]

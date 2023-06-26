@@ -1,6 +1,6 @@
 use std::{fmt, rc::Rc};
 
-use crate::error::{CrispError, type_error};
+use crate::{env::CrispEnv, error::{CrispError, type_error}};
 
 #[derive(Clone)]
 pub enum CrispExpr {
@@ -9,7 +9,7 @@ pub enum CrispExpr {
     Number(f64),
     Bool(bool),
     List(Vec<CrispExpr>),
-    Func(fn(&[CrispExpr]) -> Result<CrispExpr, CrispError>),
+    Func(fn(&[CrispExpr], &mut CrispEnv) -> Result<CrispExpr, CrispError>),
     Lambda(CrispLambda)
 }
 

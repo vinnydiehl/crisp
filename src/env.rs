@@ -33,6 +33,8 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
     add_function!("<", lt);
     add_function!("<=", lte);
 
+    add_function!("map", crisp_map);
+
     CrispEnv { data, parent: None }
 }
 
