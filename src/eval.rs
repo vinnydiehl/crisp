@@ -20,7 +20,9 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
                         CrispExpr::Lambda(lambda) => {
                             eval(
                                 &lambda.func,
-                                &mut env_new_for_lambda(lambda.args, args, env)?
+                                &mut env_new_for_lambda(lambda.args,
+                                                        &eval_across_list(args, env)?,
+                                                        env)?
                             )
                         },
 

@@ -10,7 +10,7 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
             match s.as_ref() {
                 "if" => Some(eval_if(args, env)),
                 "let" => Some(eval_let(args, env)),
-                "\\" => Some(eval_lambda(args)),
+                "\\" => Some(eval_keyword_lambda(args)),
                 "fn" => Some(eval_fn(args, env)),
                 _ => None
             }
@@ -51,7 +51,7 @@ fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispEr
     Ok(value.clone())
 }
 
-fn eval_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+fn eval_keyword_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
     let a = args.first().unwrap().clone();
@@ -77,7 +77,7 @@ fn eval_fn(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispErr
         _ => return type_error!("Symbol")
     };
 
-    let lambda = eval_lambda(tail)?;
+    let lambda = eval_keyword_lambda(tail)?;
     env.data.insert(name, lambda.clone());
 
     Ok(lambda.clone())
@@ -352,6 +352,33 @@ mod tests {
                     sym!("+"),
                     sym!("a"),
                     sym!("b")
+                ]
+            ],
+            Number(4.0),
+            Number(2.0)
+        ];
+
+        assert_eq!(eval(&call, &mut env).unwrap(), Number(6.0));
+    }
+
+    #[test]
+    fn test_lambda_nested_eval() {
+        let mut env = initialize_environment();
+        let call = list![
+            list![
+                sym!("\\"),
+                list![
+                    sym!("a"),
+                    sym!("b")
+                ],
+                list![
+                    sym!("+"),
+                    Number(0.0),
+                    list![
+                        sym!("+"),
+                        sym!("a"),
+                        sym!("b")
+                    ]
                 ]
             ],
             Number(4.0),

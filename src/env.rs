@@ -1,7 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{error::{CrispError, argument_error, parse_error},
-            eval::eval_across_list, expr::CrispExpr, functions};
+use crate::{error::{CrispError, argument_error, parse_error}, expr::CrispExpr, functions};
 
 #[derive(Clone)]
 pub struct CrispEnv<'a> {
@@ -76,12 +75,9 @@ pub fn env_new_for_lambda<'a>(
         return argument_error!(n_args, n_args);
     };
 
-    // Evaluate the inputs to the function
-    let arg_passed_values = eval_across_list(arg_passed_exprs, parent_env)?;
-
     // Insert the inputs to the arguments into the `env.data` for this scope
     let mut data: HashMap<String, CrispExpr> = HashMap::new();
-    for (name, value) in arg_names.iter().zip(arg_passed_values.iter()) {
+    for (name, value) in arg_names.iter().zip(arg_passed_exprs.iter()) {
         data.insert(name.clone(), value.clone());
     }
 
