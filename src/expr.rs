@@ -47,7 +47,7 @@ impl fmt::Display for CrispExpr {
             CrispExpr::Number(n) => n.to_string(),
             CrispExpr::Bool(b) => b.to_string(),
             CrispExpr::List(list) => format!("({})",
-                list.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(",")
+                list.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(" ")
             ),
             CrispExpr::Func(_) => "<Func>".to_string(),
             CrispExpr::Lambda(_) => "<Lambda>".to_string()
