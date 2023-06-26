@@ -38,15 +38,15 @@ pub fn sub(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc - n)
 }
 
-pub fn mult (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn mult(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc * n)
 }
 
-pub fn div (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn div(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc / n)
 }
 
-pub fn modulus (args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+pub fn modulus(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     list_foldl1::<f64>(args, |acc, n| acc % n)
 }
 
