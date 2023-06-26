@@ -133,7 +133,7 @@ fn parse_atom(token: &str) -> Result<CrispExpr, CrispError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expr::CrispExpr::*, macros::*};
+    use crate::{expr::CrispExpr::*};
 
     #[test]
     fn test_tokenize() {

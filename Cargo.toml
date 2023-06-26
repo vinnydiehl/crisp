@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 cargo-nextest = "0.9.53"
+dyn-fmt = "0.3.0"
 snailquote = "0.3.0"

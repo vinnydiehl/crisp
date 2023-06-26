@@ -1,24 +1,31 @@
 use crate::{error::{CrispError, argument_error, check_argument_error},
             expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
 
-pub fn puts(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
-    if let Some((str, _format_args)) = args.split_first() {
-        // TODO: Impelement format args. No point in doing that now, with no strings.
-        println!("{}", str);
-        return Ok(str.clone());
+use dyn_fmt::AsStrFormatExt;
+
+pub fn crisp_format(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    if let Some((format_str, format_args)) = args.split_first() {
+        return Ok(str!(match format_args {
+            [] => format!("{}", format_str),
+            _ => format_str.to_string().format(format_args)
+        }));
     }
 
     argument_error!(1, -1)
 }
 
-pub fn print(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
-    if let Some((str, _format_args)) = args.split_first() {
-        // TODO: Impelement format args.
-        print!("{}", str);
-        return Ok(str.clone());
-    }
+pub fn puts(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    let value = crisp_format(args)?;
+    println!("{}", value);
 
-    argument_error!(1, -1)
+    Ok(value)
+}
+
+pub fn print(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
+    let value = crisp_format(args)?;
+    print!("{}", value);
+
+    Ok(value)
 }
 
 // Math operators
@@ -125,7 +132,111 @@ where T: FromCrispExpr + IntoCrispExpr + Copy {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{expr::CrispExpr::*, macros::*};
+    use crate::{expr::CrispExpr::*};
+
+    #[test]
+    fn test_format() {
+        let result = crisp_format(&vec![
+            str!("test")
+        ]).unwrap();
+
+        assert_eq!(result, str!("test"));
+
+        let result = crisp_format(&vec![
+            str!("test: {}"),
+            str!("foo")
+        ]).unwrap();
+
+        assert_eq!(result, str!("test: foo"));
+
+        let result = crisp_format(&vec![
+            str!("test: {}"),
+            Number(123.0)
+        ]).unwrap();
+
+        assert_eq!(result, str!("test: 123"));
+
+        let result = crisp_format(&vec![
+            str!("{}{}"),
+            Number(1.0),
+            Number(2.0)
+        ]).unwrap();
+
+        assert_eq!(result, str!("12"));
+
+        let result = crisp_format(&vec![
+            str!("{} a {} b {}"),
+            str!("1"),
+            Number(2.0),
+            Bool(true),
+        ]).unwrap();
+
+        assert_eq!(result, str!("1 a 2 b true"));
+    }
+
+    #[test]
+    fn test_format_escape() {
+        let result = crisp_format(&vec![
+            str!("{{}}"),
+            Number(42.0)
+        ]).unwrap();
+
+        assert_eq!(result, str!("{}"));
+
+        let result = crisp_format(&vec![
+            str!("{}{{}}{}"),
+            Number(24.0),
+            Number(42.0)
+        ]).unwrap();
+
+        assert_eq!(result, str!("24{}42"));
+
+        let result = crisp_format(&vec![
+            str!("test {{ escaped braces }} {{:3}}"),
+            Number(42.0)
+        ]).unwrap();
+
+        assert_eq!(result, str!("test { escaped braces } {:3}"));
+
+        // With no arguments, braces don't need to be escaped
+        let result = crisp_format(&vec![
+            str!("test {{ escaped braces }} {{:3}}"),
+        ]).unwrap();
+
+        assert_eq!(result, str!("test {{ escaped braces }} {{:3}}"));
+    }
+
+    #[test]
+    fn test_format_too_many_args() {
+        // It should discard the superfluous args
+        let result = crisp_format(&vec![
+            str!("test: {}"),
+            str!("foo"),
+            str!("bar"),
+            str!("baz")
+        ]).unwrap();
+
+        assert_eq!(result, str!("test: foo"));
+    }
+
+    #[test]
+    fn test_format_too_few_args() {
+        // It should fill in left-to-right and leave the remaining braces
+        let result = crisp_format(&vec![
+            str!("test: {} {} {}"),
+            str!("foo")
+        ]).unwrap();
+
+        assert_eq!(result, str!("test: foo  "));
+
+        let result = crisp_format(&vec![
+            str!("test: {} {} {}"),
+            str!("foo"),
+            str!("bar")
+        ]).unwrap();
+
+        assert_eq!(result, str!("test: foo bar "));
+    }
 
     // Math
 

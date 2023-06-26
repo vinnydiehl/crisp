@@ -55,7 +55,7 @@ pub fn eval_across_list(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::initialize_environment, expr::CrispExpr::*, macros::*};
+    use crate::{env::initialize_environment, expr::CrispExpr::*};
 
     #[test]
     fn test_eval_symbol_found() {

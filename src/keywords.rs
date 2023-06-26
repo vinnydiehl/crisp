@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::{error::{CrispError, check_argument_error, type_error},
-            expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval, macros::list};
+            expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
 
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                     env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
@@ -86,7 +86,7 @@ fn eval_fn(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispErr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::initialize_environment, eval::eval, expr::CrispExpr::*, macros::*};
+    use crate::{env::initialize_environment, eval::eval, expr::CrispExpr::*};
 
     // if keyword
 
