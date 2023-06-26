@@ -160,8 +160,10 @@ where T: FromCrispExpr + IntoCrispExpr + Copy {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use super::*;
-    use crate::{expr::CrispExpr::*, env::initialize_environment, eval::eval};
+    use crate::{expr::{CrispExpr::*, CrispLambda}, env::initialize_environment};
 
     #[test]
     fn test_format() {
@@ -379,22 +381,36 @@ mod tests {
     #[test]
     fn test_map() {
         let mut env = initialize_environment();
+
         let args = vec![
-            // TODO: Better Way to make lambdas for testing
-            eval(&list![
-                sym!("\\"),
-                sym!("a"),
-                list![
+            lambda![
+                args: ["a"],
+                func: [
                     sym!("*"),
                     sym!("a"),
                     Number(2.0)
                 ]
-            ], &mut env).unwrap(),
+            ],
             List(num_list![2.0, 3.0, 4.0])
         ];
 
         assert_eq!(crisp_map(&args, &mut env).unwrap(),
                    List(num_list![4.0, 6.0, 8.0]));
+
+        let args = vec![
+            lambda![
+                args: ["a", "b"],
+                func: [
+                    sym!("+"),
+                    sym!("a"),
+                    sym!("b")
+                ]
+            ],
+            List(num_list![1.0, 2.0, 10.0, 20.0, 100.0, 200.0])
+        ];
+
+        assert_eq!(crisp_map(&args, &mut env).unwrap(),
+                   List(num_list![3.0, 30.0, 300.0]));
     }
 
     #[test]

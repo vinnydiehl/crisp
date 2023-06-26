@@ -16,6 +16,15 @@ macro_rules! list {
     }
 }
 
+macro_rules! lambda {
+    (args: [$($arg:expr),*], func: [$($func:expr),*]) => {{
+        CrispExpr::Lambda(CrispLambda {
+            args: Rc::new(list![$(sym!($arg)),*]),
+            func: Rc::new(list![$($func),*])
+        })
+    }};
+}
+
 macro_rules! num_list {
     ($($elem:expr),*) => {
         vec![$(CrispExpr::Number($elem)),*]
