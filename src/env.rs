@@ -18,20 +18,20 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
     }
 
     add_function!("format", crisp_format);
-    add_function!("puts", puts);
-    add_function!("print", print);
+    add_function!("puts", crisp_puts);
+    add_function!("print", crisp_print);
 
-    add_function!("+", add);
-    add_function!("-", sub);
-    add_function!("*", mult);
-    add_function!("/", div);
-    add_function!("mod", modulus);
+    add_function!("+", crisp_add);
+    add_function!("-", crisp_sub);
+    add_function!("*", crisp_mult);
+    add_function!("/", crisp_div);
+    add_function!("mod", crisp_mod);
 
-    add_function!("=", eq);
-    add_function!(">", gt);
-    add_function!(">=", gte);
-    add_function!("<", lt);
-    add_function!("<=", lte);
+    add_function!("=", crisp_eq);
+    add_function!(">", crisp_gt);
+    add_function!(">=", crisp_gte);
+    add_function!("<", crisp_lt);
+    add_function!("<=", crisp_lte);
 
     add_function!("map", crisp_map);
 
