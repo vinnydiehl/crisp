@@ -10,16 +10,21 @@ pub use math::*;
 
 use crate::{error::CrispError, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}};
 
+/// Extracts a value from a `CrispExpr`.
 fn extract_value<T>(expr: &CrispExpr) -> Result<T, CrispError>
 where T: FromCrispExpr {
     T::from_crisp_expr(expr)
 }
 
+/// Maps across a List, extracting all of the values of the `CrispExpr`s
+/// into a `Vec`.
 fn extract_list<T>(list: &[CrispExpr]) -> Result<Vec<T>, CrispError>
 where T: FromCrispExpr {
     list.iter().map(|expr| extract_value::<T>(expr)).collect()
 }
 
+/// For internal use with Rust functions. See `crisp_foldl()` for the crisp
+/// `foldl` function.
 fn backend_foldl<T, U>(args: &[CrispExpr], init: T,
                        mut operation: impl FnMut(T, U) -> T) -> Result<CrispExpr, CrispError>
 where
@@ -33,6 +38,8 @@ where
     ))
 }
 
+/// For internal use with Rust functions. See `crisp_foldl1()` for the crisp
+/// `foldl1` function.
 fn backend_foldl1<T>(args: &[CrispExpr],
                      mut operation: impl FnMut(T, T) -> T) -> Result<CrispExpr, CrispError>
 where T: FromCrispExpr + IntoCrispExpr + Copy {

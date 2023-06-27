@@ -2,6 +2,9 @@ use std::rc::Rc;
 
 use crate::{error::CrispError, expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
 
+/// When a Symbol begins a List, it is passed through this function which
+/// checks if it is a keyword and if so, evaluates the list via one of the
+/// routines in this file.
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                     env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
     match expr {
@@ -18,13 +21,27 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
     }
 }
 
+/// An `if` expression has the following syntax:
+///
+/// ```lisp
+/// (if predicate true_expr false_expr)
+/// ```
+///
+/// `predicate` is an expression which evaluates to `true` or `false`.
+/// Depending on the result, the `if` expression will evaluate and
+/// return `true_expr` or `false_expr`.
+///
+/// # Examples
+///
+/// ```lisp
+/// (if (> 5 4) (+ 0 5) (- 0 5)) ; => 5
+/// (if (< 5 4) (+ 0 5) (- 0 5)) ; => -5
+/// ```
 fn eval_if(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 3, 3);
 
     match eval(args.first().unwrap(), env)? {
         CrispExpr::Bool(b) => {
-            // The function is going to be called like:
-            //     (if (> a b) true_routine false_routine)
             // Depending on whether or not the predicate is true, we want to index
             // the args differently (0 is the predicate)
             let response = args.get(if b { 1 } else { 2 }).unwrap();
@@ -35,6 +52,21 @@ fn eval_if(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispErr
     }
 }
 
+/// `let` is the variable assignment keyword. It returns the assigned value.
+///
+/// # Usage
+///
+/// ```lisp
+/// let var_name value
+/// ```
+///
+/// # Examples
+///
+/// ```lisp
+/// let str "foo"
+/// let n 42
+/// let xs (1 2 3 4 5)
+/// ```
 fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
@@ -50,6 +82,22 @@ fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispEr
     Ok(value.clone())
 }
 
+/// A Lambda is an anonymous function. It is declared like so:
+///
+/// ```lisp
+/// (\ args expression)
+/// ```
+///
+/// `args` is either a Symbol or a List of Symbols, and when the Lambda
+/// is called, the values given as arguments will be available within the
+/// expression with those variable names.
+///
+/// # Examples
+///
+/// ```lisp
+/// ((\ (a b) (* a b)) 3 5)       ; => 15
+/// map (\ n (* 2 n)) (1 2 3 4 5) ; => (2 4 6 8 10)
+/// ```
 fn eval_keyword_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
@@ -66,6 +114,28 @@ fn eval_keyword_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     }))
 }
 
+/// `fn` defines a function by creating a Lambda and saving it to the
+/// environment. `fn` is syntactic sugar for:
+///
+/// ```lisp
+/// let name (\ args expression)
+/// ```
+///
+/// Rather, with `fn` you can just do this:
+///
+/// ```lisp
+/// fn name args expression
+/// ```
+///
+/// # Examples
+///
+/// ```lisp
+/// fn double n (* 2 n)
+/// double 5             ; => 10
+///
+/// fn add (a b) (+ a b)
+/// add 10 20            ; => 30
+/// ```
 fn eval_fn(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 3, 3);
 

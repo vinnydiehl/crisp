@@ -1,6 +1,7 @@
 use crate::{error::CrispError, expr::{CrispExpr, CrispLambda},
             env::{CrispEnv, env_get, env_new_for_lambda}, keywords::eval_keyword};
 
+/// Evaluates an expression, resolving a node of the AST to a single value.
 pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     match expr {
         CrispExpr::List(list) if list.is_empty() => Ok(list![]),
@@ -40,6 +41,7 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
     }
 }
 
+/// Iterates across a slice of expressions, `eval()`ing each one.
 pub fn eval_across_list(
     args: &[CrispExpr],
     env: &mut CrispEnv
@@ -47,6 +49,8 @@ pub fn eval_across_list(
     args.iter().map(|a| eval(a, env)).collect()
 }
 
+/// Calls a Lambda with the arguments given in `args`, returns the return
+/// value of that Lambda call.
 pub fn eval_lambda(
     lambda: CrispLambda,
     args: &[CrispExpr],

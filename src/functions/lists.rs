@@ -1,5 +1,13 @@
 use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, eval::eval_lambda};
 
+/// `cons` adds an element to the beginning of a list.
+///
+/// # Examples
+///
+/// ```lisp
+/// cons 1 (2 3)       ; => (1 2 3)
+/// cons 1 (cons 2 ()) ; => (1 2 3)
+/// ```
 pub fn crisp_cons(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
@@ -17,6 +25,23 @@ pub fn crisp_cons(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, 
     }
 }
 
+/// `map` iterates across a List, applying a function to each element (or
+/// chunk of elements, if the function makes multiple arguments) and returning
+/// a new List with the results of those functions.
+///
+/// # Usage
+///
+/// ```lisp
+/// map lambda list
+/// ```
+///
+/// # Examples
+///
+/// ```lisp
+/// fn double n (* 2 n)
+/// map double (1 2 3 4 5)                 ; => (2 4 6 8 10)
+/// map (\ (a b) (+ a b)) (1 10 2 20 3 40) ; => (11 22 33)
+/// ```
 pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
@@ -48,6 +73,25 @@ pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, Cr
     }
 }
 
+/// `foldl` takes a Lambda which takes 2 arguments, an accumulator and a
+/// variable which will represent the next value of the list. The accumulator
+/// is initialized with a start value, and as the List is iterated over one
+/// element at a time, the Lambda is called with the accumulator and the next
+/// element of the list, and the accumulator is set to the return value of
+/// the Lambda call.
+///
+/// # Usage
+///
+/// ```lisp
+/// foldl lambda start_value list
+/// ```
+///
+/// # Examples
+///
+/// ```lisp
+/// foldl (\ (acc n) (+ acc n)) 0 (1 2 3)         ; => 6
+/// foldl (\ (acc x) (cons x acc)) () (1 2 3 4 5) ; => (5 4 3 2 1)
+/// ```
 pub fn crisp_foldl(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 3, 3);
 
@@ -78,6 +122,21 @@ pub fn crisp_foldl(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, 
     }
 }
 
+/// `foldl1` is similar to `foldl`, but the starting value is set to the first
+/// element of the List.
+///
+/// # Usage
+///
+/// ```lisp
+/// foldl lambda list
+/// ```
+///
+/// # Examples
+///
+/// ```lisp
+/// foldl1 (\ (acc n) (+ acc n)) (1 2 3) ; => 6
+/// foldl1 (\ (_ x) x) (1 2 3)           ; => 3
+/// ```
 pub fn crisp_foldl1(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 

@@ -2,6 +2,17 @@ use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv};
 
 use dyn_fmt::AsStrFormatExt;
 
+/// `format` works similar to the format strings in Rust or Python,
+/// taking a String and a list of items to interpolate into it. Instances
+/// of `{}` within the string are replaced with these values. Use `{{` and `}}`
+/// to escape the `{` and `}` characters in strings that are being interpolated.
+///
+/// # Examples
+///
+/// ```lisp
+/// format "{}" 5         ; => "5"
+/// format "{}: {}" "n" 5 ; => "n: 5"
+/// ```
 pub fn crisp_format(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     if let Some((format_str, format_args)) = args.split_first() {
         return Ok(str!(match format_args {
@@ -13,6 +24,15 @@ pub fn crisp_format(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr
     argument_error!(1, -1)
 }
 
+/// `puts` prints the specified string followed by a newline. It takes
+/// format parameters similar to `format`.
+///
+/// # Examples
+///
+/// ```lisp
+/// puts "Hello, world!"
+/// puts "Number: {}" 5
+/// ```
 pub fn crisp_puts(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     let value = crisp_format(args, env)?;
     println!("{}", value);
@@ -20,6 +40,16 @@ pub fn crisp_puts(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, C
     Ok(value)
 }
 
+/// `print` prints the specified string, with no newline. It takes format
+/// parameters similar to `format`.
+///
+/// # Examples
+///
+/// ```lisp
+/// print "Hello, world!\n"
+/// print "Number: "
+/// puts 5
+/// ```
 pub fn crisp_print(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     let value = crisp_format(args, env)?;
     print!("{}", value);

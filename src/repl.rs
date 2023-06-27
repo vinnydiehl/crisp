@@ -4,6 +4,9 @@ use std::{io::{ self, BufRead, Write }, collections::hash_map::Entry};
 
 use crate::{print_return, send};
 
+/// The Read/Execute/Print Loop (REPL). Continually prompts the user for
+/// expressions, which it evaluates immediately and prints the return value,
+/// maintaining an environment so the user may execute a program line-by-line.
 pub fn run() {
     let stdin = io::stdin();
     let mut stdout = io::stdout();

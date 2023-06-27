@@ -28,6 +28,9 @@ use eval::eval;
 use expr::CrispExpr;
 use reader::{parse, tokenize};
 
+/// Parses the CLI arguments. See the [`clap`
+/// examples](https://github.com/clap-rs/clap/tree/master/examples)
+/// for more information.
 fn parse_args() -> ArgMatches {
     command!()
         .arg(arg!([input] "File to run."))
@@ -35,6 +38,8 @@ fn parse_args() -> ArgMatches {
         .get_matches()
 }
 
+/// Main entry point for the program. Defers to `repl::run()` if there is no
+/// file given, otherwise runs the file.
 fn main() -> Result<(), CrispError> {
     let matches = parse_args();
 
@@ -77,34 +82,54 @@ fn main() -> Result<(), CrispError> {
     Ok(())
 }
 
+/// Reads the lines of a file specified by the provided `filename` and returns
+/// an iterator over the lines wrapped in an `io::Result` representing the
+/// success or failure of the operation.
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
 
-fn process_expr(expr: &String, env: &mut CrispEnv, debug: bool) -> Result<CrispExpr, CrispError> {
+/// Local function for parsing, evaluating, and then printing the return
+/// if `print_ret` is set.
+fn process_expr(expr: &String, env: &mut CrispEnv, print_ret: bool) -> Result<CrispExpr, CrispError> {
     let ret = send(expr.clone(), env)?;
-    if debug {
+    if print_ret {
         print_return(&ret);
     }
     Ok(ret)
 }
 
+/// Parses and evaluates an expression from a String.
 pub fn send(input: String, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     let (ast, _) = parse(&tokenize(input))?;
     Ok(eval(&ast, env)?)
 }
 
+/// Prints the return value from the CrispExpr `ret`, with a colored indicator
+/// preceding it.
 pub fn print_return(ret: &CrispExpr) {
-    let ret_indicator = "=>".bright_green();
+    let ret_indicator = "=> ".bright_green();
 
     match ret {
-        CrispExpr::CrispString(str) => println!("{} {}", ret_indicator, escape_string(str)),
-        _ => println!("{} {}", ret_indicator, ret)
+        CrispExpr::CrispString(str) => println!("{}{}", ret_indicator, escape_string(str)),
+        _ => println!("{}{}", ret_indicator, ret)
     }
 }
 
+/// Escapes a String for display e.g. in the REPL return or displaying a List
+/// containing Strings.
+///
+/// # Examples
+///
+/// ```
+/// let str = escape_string("foo");
+/// assert_eq!(str, "'foo'".to_string());
+///
+/// let str = escape_string("a'b");
+/// assert_eq!(str, "\"a'b\"".to_string());
+/// ```
 pub fn escape_string(str: &str) -> String {
     match escape(&str) {
         escaped if &escaped == str => format!("'{}'", escaped),

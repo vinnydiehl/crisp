@@ -1,8 +1,15 @@
 use crate::{error::CrispError, expr::CrispExpr,
             env::CrispEnv, functions::{backend_foldl, extract_value}};
 
-// Operators
-
+/// The equality operator ensures that all elements of a list are the same.
+///
+/// # Examples
+///
+/// ```lisp
+/// (= 5 5)                ; => true
+/// (= 5 (+ 3 2) (- 10 5)) ; => true
+/// (= 5 5 4 5)            ; => false
+/// ```
 pub fn crisp_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, -1);
 
@@ -13,6 +20,25 @@ pub fn crisp_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, Cr
     backend_foldl::<bool, f64>(&args[1..], true, |acc, n| acc && n == first_value)
 }
 
+/// The comparison operators ensure that a list increases or decreases
+/// monotonically. These functions are set with macros:
+///
+///  * `>`
+///  * `>=`
+///  * `<`
+///  * `<=`
+///
+/// # Examples
+///
+/// ```lisp
+/// (> 5 4)      ; => true
+/// (> 5 4 3 1)  ; => true
+/// (> 5 4 4 1)  ; => false
+/// (>= 5 4 4 1) ; => true
+/// (> 3 10)     ; => false
+/// (< 3 10)     ; => true
+/// (<= 3 3)     ; => true
+/// ```
 macro_rules! fold_compare {
     ($name:ident, $op:tt) => {
         pub fn $name(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {

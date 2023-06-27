@@ -1,7 +1,25 @@
 use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, functions::backend_foldl1};
 
-// Operators
-
+/// The math operators fold across the list from left-to-right, applying the
+/// operator to the next element. The result is that `+` is more of a List
+/// sum function than a simple addition function. The following functions
+/// are set in this manner with macros:
+///
+///  * `+`: Addition
+///  * `-`: Subtraction
+///  * `*`: Multiplication
+///  * `/`: Division
+///  * `mod`: Modulus
+///
+/// # Examples
+///
+/// ```lisp
+/// (+ 1 2 3) ; => 6
+/// (- 3 2 1) ; => 0
+/// (* 2 10)  ; => 20
+/// (/ 9 2)   ; => 4.5
+/// (mod 9 2) ; => 1
+/// ```
 macro_rules! fold_operator {
     ($name:ident, $op:tt) => {
         pub fn $name(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {

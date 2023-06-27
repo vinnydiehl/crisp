@@ -8,6 +8,9 @@ pub struct CrispEnv<'a> {
     pub parent: Option<&'a CrispEnv<'a>>
 }
 
+/// Initializes and returns an environment with all of the built-in functions.
+/// This will be the top-level scope under which all other environments
+/// will nest.
 pub fn initialize_environment<'a>() -> CrispEnv<'a> {
     let mut data: HashMap<String, CrispExpr> = HashMap::new();
 
