@@ -38,7 +38,7 @@ fn parse_args() -> ArgMatches {
         .get_matches()
 }
 
-/// Main entry point for the program. Defers to `repl::run()` if there is no
+/// Main entry point for the program. Defers to [`repl::run()`] if there is no
 /// file given, otherwise runs the file.
 fn main() -> Result<(), CrispError> {
     let matches = parse_args();
@@ -83,7 +83,7 @@ fn main() -> Result<(), CrispError> {
 }
 
 /// Reads the lines of a file specified by the provided `filename` and returns
-/// an iterator over the lines wrapped in an `io::Result` representing the
+/// an iterator over the lines wrapped in an [`io::Result`] representing the
 /// success or failure of the operation.
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where P: AsRef<Path>, {
@@ -101,14 +101,14 @@ fn process_expr(expr: &String, env: &mut CrispEnv, print_ret: bool) -> Result<Cr
     Ok(ret)
 }
 
-/// Parses and evaluates an expression from a String.
+/// Parses and evaluates an expression from a Rust [`String`].
 pub fn send(input: String, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     let (ast, _) = parse(&tokenize(input))?;
     Ok(eval(&ast, env)?)
 }
 
-/// Prints the return value from the CrispExpr `ret`, with a colored indicator
-/// preceding it.
+/// Prints the return value from the [`CrispExpr`] `ret`, with a colored
+/// indicator preceding it.
 pub fn print_return(ret: &CrispExpr) {
     let ret_indicator = "=> ".bright_green();
 
@@ -118,8 +118,8 @@ pub fn print_return(ret: &CrispExpr) {
     }
 }
 
-/// Escapes a String for display e.g. in the REPL return or displaying a List
-/// containing Strings.
+/// Escapes a string literal for display e.g. in the REPL return or displaying
+/// a [`List`](CrispExpr) containing [`String`](CrispExpr)s.
 ///
 /// # Examples
 ///

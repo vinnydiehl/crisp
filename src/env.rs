@@ -58,19 +58,21 @@ pub fn env_get(name: &str, env: &CrispEnv) -> Option<CrispExpr> {
     }
 }
 
-/// When a lambda is called, this routine is called, creating a new scope.
+/// When a [`Lambda`](CrispExpr) is called, this routine is called, creating a
+/// new scope.
 ///
 /// # Arguments
 ///
-///  * `lambda_args`: `CrispExpr::List` of `CrispExpr::Symbols` containing
+///  * `lambda_args`: [`List`](CrispExpr) of [`Symbol`](CrispExpr)s containing
 ///                   the names of the arguments.
 ///  * `arg_passed_exprs`: The unevaluated expressions that were passed into
-///                        the lambda when it was called.
-///  * `parent_env`: The scope just outside the lambda.
+///                        the `Lambda` when it was called.
+///  * `parent_env`: The scope just outside the `Lambda`.
 ///
 /// # Returns
 ///
-/// The `CrispEnv` for this scope, or a `CrispError` if there were any problems.
+/// The [`CrispEnv`] for this scope, or a [`CrispError`] if there were any
+/// problems.
 pub fn env_new_for_lambda<'a>(
     lambda_args: Rc<CrispExpr>,
     arg_passed_exprs: &[CrispExpr],
@@ -92,8 +94,8 @@ pub fn env_new_for_lambda<'a>(
     Ok(CrispEnv { data, parent: Some(parent_env) })
 }
 
-/// Given a reference counted pointer to a `CrispExpr::List` full of
-/// `CrispExpr::Symbol`s, processes it into a `Vec<String>`.
+/// Given a reference counted pointer to a [`List`](CrispExpr) full of
+/// [`Symbol`](CrispExpr)s, processes it into a [`Vec<String>`].
 fn parse_symbol_list(list: Rc<CrispExpr>) -> Result<Vec<String>, CrispError> {
     let arg_names = match list.as_ref() {
         CrispExpr::List(list) => Ok(list.clone()),

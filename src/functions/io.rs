@@ -3,9 +3,10 @@ use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv};
 use dyn_fmt::AsStrFormatExt;
 
 /// `format` works similar to the format strings in Rust or Python,
-/// taking a String and a list of items to interpolate into it. Instances
-/// of `{}` within the string are replaced with these values. Use `{{` and `}}`
-/// to escape the `{` and `}` characters in strings that are being interpolated.
+/// taking a [`String`](CrispExpr) and a list of values to interpolate into it.
+/// Instances of `{}` within the string are replaced with these values. Use `{{`
+/// and `}}` to escape the `{` and `}` characters in strings that are being
+/// interpolated.
 ///
 /// # Examples
 ///
@@ -24,8 +25,8 @@ pub fn crisp_format(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr
     argument_error!(1, -1)
 }
 
-/// `puts` prints the specified string followed by a newline. It takes
-/// format parameters similar to `format`.
+/// `puts` prints the specified value followed by a newline. It takes
+/// format parameters similar to [`format`](crisp_format).
 ///
 /// # Examples
 ///
@@ -40,8 +41,8 @@ pub fn crisp_puts(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, C
     Ok(value)
 }
 
-/// `print` prints the specified string, with no newline. It takes format
-/// parameters similar to `format`.
+/// `print` prints the specified value, with no newline. It takes format
+/// parameters similar to [`format`](crisp_format).
 ///
 /// # Examples
 ///

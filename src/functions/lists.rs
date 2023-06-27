@@ -1,6 +1,6 @@
 use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, eval::eval_lambda};
 
-/// `cons` adds an element to the beginning of a list.
+/// `cons` adds an element to the beginning of a [`List`](CrispExpr).
 ///
 /// # Examples
 ///
@@ -25,17 +25,17 @@ pub fn crisp_cons(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, 
     }
 }
 
-/// `map` iterates across a List, applying a function to each element (or
-/// chunk of elements, if the function makes multiple arguments) and returning
-/// a new List with the results of those functions.
+/// `map` iterates across a [`List`](CrispExpr), applying a function to each
+/// element (or chunk of elements, if the function makes multiple arguments)
+/// and returning a new `List` with the results of those functions.
 ///
-/// # Usage
+/// # usage
 ///
 /// ```lisp
 /// map lambda list
 /// ```
 ///
-/// # Examples
+/// # examples
 ///
 /// ```lisp
 /// fn double n (* 2 n)
@@ -73,12 +73,12 @@ pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, Cr
     }
 }
 
-/// `foldl` takes a Lambda which takes 2 arguments, an accumulator and a
-/// variable which will represent the next value of the list. The accumulator
-/// is initialized with a start value, and as the List is iterated over one
-/// element at a time, the Lambda is called with the accumulator and the next
-/// element of the list, and the accumulator is set to the return value of
-/// the Lambda call.
+/// `foldl` takes a [`Lambda`](CrispExpr) which takes 2 arguments, an
+/// accumulator and a variable which will represent the next value of the
+/// [`List`](CrispExpr). The accumulator is initialized with a start value, and
+/// as the `List` is iterated over one element at a time, the `Lambda` is called
+/// with the accumulator and the next element of the `List`, and the accumulator
+/// is set to the return value of the `Lambda` call.
 ///
 /// # Usage
 ///
@@ -122,8 +122,8 @@ pub fn crisp_foldl(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, 
     }
 }
 
-/// `foldl1` is similar to `foldl`, but the starting value is set to the first
-/// element of the List.
+/// `foldl1` is similar to [`foldl`](crisp_foldl), but the starting value is set
+/// to the first element of the [`List`](CrispExpr).
 ///
 /// # Usage
 ///

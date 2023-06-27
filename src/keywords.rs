@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use crate::{error::CrispError, expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
 
-/// When a Symbol begins a List, it is passed through this function which
-/// checks if it is a keyword and if so, evaluates the list via one of the
-/// routines in this file.
+/// When a [`Symbol`](CrispExpr) begins a [`List`](CrispExpr), it is passed
+/// through this function which checks if it is a keyword and if so, evaluates
+/// the list via one of the routines in this file.
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                     env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
     match expr {
@@ -82,15 +82,15 @@ fn eval_let(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispEr
     Ok(value.clone())
 }
 
-/// A Lambda is an anonymous function. It is declared like so:
+/// A [`Lambda`](CrispExpr) is an anonymous function. It is declared like so:
 ///
 /// ```lisp
 /// (\ args expression)
 /// ```
 ///
-/// `args` is either a Symbol or a List of Symbols, and when the Lambda
-/// is called, the values given as arguments will be available within the
-/// expression with those variable names.
+/// `args` is either a [`Symbol`](CrispExpr) or a [`List`](CrispExpr) of
+/// `Symbol`s, and when the `Lambda` is called, the values given as arguments
+/// will be available within the expression with those variable names.
 ///
 /// # Examples
 ///
@@ -114,8 +114,8 @@ fn eval_keyword_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
     }))
 }
 
-/// `fn` defines a function by creating a Lambda and saving it to the
-/// environment. `fn` is syntactic sugar for:
+/// `fn` defines a function by creating a [`Lambda`](CrispExpr) and saving it
+/// to the environment. `fn` is syntactic sugar for:
 ///
 /// ```lisp
 /// let name (\ args expression)

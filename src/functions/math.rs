@@ -1,9 +1,9 @@
 use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, functions::backend_foldl1};
 
-/// The math operators fold across the list from left-to-right, applying the
-/// operator to the next element. The result is that `+` is more of a List
-/// sum function than a simple addition function. The following functions
-/// are set in this manner with macros:
+/// The math operators fold across the [`List`](CrispExpr) from left-to-right,
+/// applying the operator to the next element. The result is that `+` is more
+/// of a `List` sum function than a simple addition function. The following
+/// functions are set in this manner with macros:
 ///
 ///  * `+`: Addition
 ///  * `-`: Subtraction
@@ -22,6 +22,7 @@ use crate::{error::CrispError, expr::CrispExpr, env::CrispEnv, functions::backen
 /// ```
 macro_rules! fold_operator {
     ($name:ident, $op:tt) => {
+        /// See [`fold_operator`].
         pub fn $name(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
             backend_foldl1::<f64>(args, |acc, n| acc $op n)
         }

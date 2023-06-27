@@ -41,7 +41,7 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
     }
 }
 
-/// Iterates across a slice of expressions, `eval()`ing each one.
+/// Iterates across a slice of expressions, [`eval()`]ing each one.
 pub fn eval_across_list(
     args: &[CrispExpr],
     env: &mut CrispEnv
@@ -49,8 +49,8 @@ pub fn eval_across_list(
     args.iter().map(|a| eval(a, env)).collect()
 }
 
-/// Calls a Lambda with the arguments given in `args`, returns the return
-/// value of that Lambda call.
+/// Calls a [`Lambda`](CrispExpr) with the arguments given in `args`, returns
+/// the return value of that `Lambda` call.
 pub fn eval_lambda(
     lambda: CrispLambda,
     args: &[CrispExpr],
