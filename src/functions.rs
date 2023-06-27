@@ -77,6 +77,25 @@ fold_compare!(crisp_gte, >=);
 fold_compare!(crisp_lt, <);
 fold_compare!(crisp_lte, <=);
 
+// List functions
+
+pub fn crisp_cons(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 2, 2);
+
+    let first = args.first().unwrap();
+
+    match args.get(1).unwrap() {
+        CrispExpr::List(list) => {
+            let mut new_list = list.clone();
+            new_list.insert(0, first.clone());
+
+            Ok(CrispExpr::List(new_list.clone()))
+        },
+
+        _ => type_error!("List")
+    }
+}
+
 pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, 2);
 
@@ -416,6 +435,39 @@ mod tests {
 
         crisp_assert_false!(crisp_lte(&num_vec![5.0, 1.0], &mut env));
         crisp_assert_false!(crisp_lte(&num_vec![5.0, 7.0, 8.0, 7.5], &mut env));
+    }
+
+    // Lists
+
+    #[test]
+    fn test_cons() {
+        let mut env = initialize_environment();
+
+        let result = crisp_cons(&vec![
+            str!("test:"),
+            num_list!(4.0, 2.0)
+        ], &mut env).unwrap();
+
+        let expected = list![
+            str!("test:"),
+            Number(4.0),
+            Number(2.0)
+        ];
+
+        assert_eq!(result, expected);
+
+        let result = crisp_cons(&vec![
+            num_list!(1.0, 2.0),
+            num_list!(3.0, 4.0)
+        ], &mut env).unwrap();
+
+        let expected = list![
+            num_list!(1.0, 2.0),
+            Number(3.0),
+            Number(4.0)
+        ];
+
+        assert_eq!(result, expected);
     }
 
     #[test]

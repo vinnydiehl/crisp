@@ -33,6 +33,7 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
     add_function!("<", crisp_lt);
     add_function!("<=", crisp_lte);
 
+    add_function!("cons", crisp_cons);
     add_function!("map", crisp_map);
     add_function!("foldl", crisp_foldl);
     add_function!("foldl1", crisp_foldl1);
