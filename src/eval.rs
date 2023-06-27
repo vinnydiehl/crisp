@@ -1,4 +1,4 @@
-use crate::{error::{CrispError, parse_error, parse_error_unwrapped}, expr::{CrispExpr, CrispLambda},
+use crate::{error::CrispError, expr::{CrispExpr, CrispLambda},
             env::{CrispEnv, env_get, env_new_for_lambda}, keywords::eval_keyword};
 
 pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {

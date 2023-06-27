@@ -1,5 +1,5 @@
-use crate::{error::{CrispError, argument_error, check_argument_error, type_error},
-            expr::{CrispExpr, FromCrispExpr, IntoCrispExpr}, env::CrispEnv, eval::eval_lambda};
+use crate::{error::CrispError, expr::{CrispExpr, FromCrispExpr, IntoCrispExpr},
+            env::CrispEnv, eval::eval_lambda};
 
 use dyn_fmt::AsStrFormatExt;
 
@@ -83,7 +83,9 @@ pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, Cr
     match args.first().unwrap() {
         CrispExpr::Lambda(lambda) => {
             let n_args = match lambda.args.as_ref() {
-                CrispExpr::Symbol(_) => 1,
+                // The Symbol case will have already been handled when the list was
+                // `eval_keyword_lambda()`ed into a CrispExpr, but we'll still print
+                // it in the error since a Symbol is an acceptable input to a lambda
                 CrispExpr::List(list) => list.len(),
                 _ => return type_error!("Symbol || List<Symbol>")
             };
@@ -103,6 +105,61 @@ pub fn crisp_map(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, Cr
         },
 
         _ => type_error!("Lambda")
+    }
+}
+
+pub fn crisp_foldl(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 3, 3);
+
+    match args.first().unwrap() {
+        CrispExpr::Lambda(lambda) => {
+            match lambda.args.as_ref() {
+                CrispExpr::List(list) if list.len() != 2 =>
+                    return standard_error!("Lambda for `foldl`/`foldl1` should take 2 arguments."),
+                _ => {}
+            };
+
+            let mut acc = args.get(1).unwrap().clone();
+
+            match args.get(2).unwrap() {
+                CrispExpr::List(list) => {
+                    for elem in list {
+                        acc = eval_lambda(lambda.clone(), &vec![acc, elem.clone()], env)?.clone();
+                    }
+
+                    Ok(acc)
+                },
+
+                _ => type_error!("List")
+            }
+        },
+
+        _ => type_error!("Lambda")
+    }
+}
+
+pub fn crisp_foldl1(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 2, 2);
+
+    // Plan of attack: pull out the first item in the list and construct a new set of
+    // args into here which we will use to call `crisp_foldl()`.
+    let mut new_args = vec![args.first().unwrap().clone()];
+
+    match args.get(1).unwrap() {
+        CrispExpr::List(list) => {
+            match list.split_first() {
+                Some((head, tail)) => {
+                    new_args.push(head.clone());
+                    new_args.push(CrispExpr::List(tail.to_vec()).clone());
+
+                    crisp_foldl(&new_args[..], env)
+                },
+
+                None => standard_error!("List for `foldl1` is empty.")
+            }
+        },
+
+        _ => type_error!("List")
     }
 }
 
@@ -413,6 +470,47 @@ mod tests {
         ], &mut env).unwrap();
 
         assert_eq!(result, List(num_list![4.0, 6.0, 8.0]));
+    }
+
+    #[test]
+    fn test_foldl() {
+        let mut env = initialize_environment();
+
+        let args = vec![
+            lambda![
+                args: ["acc", "n"],
+                func: [
+                    sym!("+"),
+                    sym!("acc"),
+                    sym!("n")
+                ]
+            ],
+            Number(10.0),
+            List(num_list![1.0, 2.0, 3.0])
+        ];
+        let result = crisp_foldl(&args, &mut env).unwrap();
+
+        assert_eq!(result, Number(16.0));
+    }
+
+    #[test]
+    fn test_foldl1() {
+        let mut env = initialize_environment();
+
+        let args = vec![
+            lambda![
+                args: ["acc", "n"],
+                func: [
+                    sym!("+"),
+                    sym!("acc"),
+                    sym!("n")
+                ]
+            ],
+            List(num_list![1.0, 2.0, 3.0])
+        ];
+        let result = crisp_foldl1(&args, &mut env).unwrap();
+
+        assert_eq!(result, Number(6.0));
     }
 
     #[test]

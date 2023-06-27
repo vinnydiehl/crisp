@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use crate::{error::{CrispError, argument_error, parse_error}, expr::CrispExpr, functions};
+use crate::{error::CrispError, expr::CrispExpr, functions};
 
 #[derive(Clone)]
 pub struct CrispEnv<'a> {
@@ -34,6 +34,8 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
     add_function!("<=", crisp_lte);
 
     add_function!("map", crisp_map);
+    add_function!("foldl", crisp_foldl);
+    add_function!("foldl1", crisp_foldl1);
 
     CrispEnv { data, parent: None }
 }

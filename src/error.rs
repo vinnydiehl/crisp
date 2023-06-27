@@ -4,7 +4,8 @@ use std::fmt;
 pub enum CrispError {
     ArgumentError(i32, i32),
     TypeError(String),
-    ParseError(String)
+    ParseError(String),
+    StandardError(String)
 }
 
 macro_rules! format_error {
@@ -33,7 +34,8 @@ impl fmt::Display for CrispError {
             },
 
             CrispError::TypeError(expected) => format_error!(TypeError, "Expected {}.", expected),
-            CrispError::ParseError(msg) => format_error!(ParseError, "{}", msg)
+            CrispError::ParseError(msg) => format_error!(ParseError, "{}", msg),
+            CrispError::StandardError(msg) => format_error!(StandardError, "{}", msg)
         };
 
         write!(f, "{}", error_message)
@@ -103,3 +105,6 @@ pub(crate) use type_error;
 generate_error_macro!(parse_error, ParseError);
 generate_unwrapped_error_macro!(parse_error_unwrapped, ParseError);
 pub(crate) use {parse_error, parse_error_unwrapped};
+
+generate_error_macro!(standard_error, StandardError);
+pub(crate) use standard_error;

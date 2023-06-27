@@ -1,6 +1,6 @@
 use std::{fmt, rc::Rc};
 
-use crate::{env::CrispEnv, error::{CrispError, type_error}};
+use crate::{env::CrispEnv, error::CrispError};
 
 #[derive(Clone)]
 pub enum CrispExpr {

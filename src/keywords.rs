@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
-use crate::{error::{CrispError, check_argument_error, type_error},
-            expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
+use crate::{error::CrispError, expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
 
 pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                     env: &mut CrispEnv) -> Option<Result<CrispExpr, CrispError>> {
