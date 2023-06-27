@@ -27,6 +27,12 @@ macro_rules! lambda {
 
 macro_rules! num_list {
     ($($elem:expr),*) => {
+        CrispExpr::List(vec![$(CrispExpr::Number($elem)),*])
+    }
+}
+
+macro_rules! num_vec {
+    ($($elem:expr),*) => {
         vec![$(CrispExpr::Number($elem)),*]
     }
 }
@@ -48,10 +54,3 @@ macro_rules! crisp_assert_eq {
         assert_eq!($expr.unwrap(), CrispExpr::Number($result));
     }
 }
-
-pub(crate) use sym;
-pub(crate) use list;
-pub(crate) use num_list;
-pub(crate) use crisp_assert;
-pub(crate) use crisp_assert_false;
-pub(crate) use crisp_assert_eq;

@@ -323,40 +323,40 @@ mod tests {
     fn test_add() {
         let mut env = initialize_environment();
 
-        crisp_assert_eq!(crisp_add(&num_list![6.0, 9.0], &mut env), 15.0);
-        crisp_assert_eq!(crisp_add(&num_list![1.0, 2.0, 3.0], &mut env), 6.0);
+        crisp_assert_eq!(crisp_add(&num_vec![6.0, 9.0], &mut env), 15.0);
+        crisp_assert_eq!(crisp_add(&num_vec![1.0, 2.0, 3.0], &mut env), 6.0);
     }
 
     #[test]
     fn test_sub() {
         let mut env = initialize_environment();
 
-        crisp_assert_eq!(crisp_sub(&num_list![6.0, 9.0], &mut env), -3.0);
-        crisp_assert_eq!(crisp_sub(&num_list![1.0, 2.0, 3.0], &mut env), -4.0);
+        crisp_assert_eq!(crisp_sub(&num_vec![6.0, 9.0], &mut env), -3.0);
+        crisp_assert_eq!(crisp_sub(&num_vec![1.0, 2.0, 3.0], &mut env), -4.0);
     }
 
     #[test]
     fn test_mult() {
         let mut env = initialize_environment();
 
-        crisp_assert_eq!(crisp_mult(&num_list![6.0, 9.0], &mut env), 54.0);
-        crisp_assert_eq!(crisp_mult(&num_list![5.0, 2.0, 3.0], &mut env), 30.0);
+        crisp_assert_eq!(crisp_mult(&num_vec![6.0, 9.0], &mut env), 54.0);
+        crisp_assert_eq!(crisp_mult(&num_vec![5.0, 2.0, 3.0], &mut env), 30.0);
     }
 
     #[test]
     fn test_div() {
         let mut env = initialize_environment();
 
-        crisp_assert_eq!(crisp_div(&num_list![9.0, 2.0], &mut env), 4.5);
-        crisp_assert_eq!(crisp_div(&num_list![30.0, 3.0, 2.0], &mut env), 5.0);
+        crisp_assert_eq!(crisp_div(&num_vec![9.0, 2.0], &mut env), 4.5);
+        crisp_assert_eq!(crisp_div(&num_vec![30.0, 3.0, 2.0], &mut env), 5.0);
     }
 
     #[test]
     fn test_mod() {
         let mut env = initialize_environment();
 
-        crisp_assert_eq!(crisp_mod(&num_list![9.0, 2.0], &mut env), 1.0);
-        crisp_assert_eq!(crisp_mod(&num_list![35.0, 25.0, 6.0], &mut env), 4.0);
+        crisp_assert_eq!(crisp_mod(&num_vec![9.0, 2.0], &mut env), 1.0);
+        crisp_assert_eq!(crisp_mod(&num_vec![35.0, 25.0, 6.0], &mut env), 4.0);
     }
 
     // Boolean
@@ -365,57 +365,57 @@ mod tests {
     fn test_eq() {
         let mut env = initialize_environment();
 
-        crisp_assert!(crisp_eq(&num_list![5.0, 5.0], &mut env));
-        crisp_assert!(crisp_eq(&num_list![30.0, 30.0, 30.0], &mut env));
+        crisp_assert!(crisp_eq(&num_vec![5.0, 5.0], &mut env));
+        crisp_assert!(crisp_eq(&num_vec![30.0, 30.0, 30.0], &mut env));
 
-        crisp_assert_false!(crisp_eq(&num_list![5.0, 4.0], &mut env));
-        crisp_assert_false!(crisp_eq(&num_list![5.0, 4.0, 5.0], &mut env));
+        crisp_assert_false!(crisp_eq(&num_vec![5.0, 4.0], &mut env));
+        crisp_assert_false!(crisp_eq(&num_vec![5.0, 4.0, 5.0], &mut env));
     }
 
     #[test]
     fn test_gt() {
         let mut env = initialize_environment();
 
-        crisp_assert!(crisp_gt(&num_list![5.0, 4.0], &mut env));
-        crisp_assert!(crisp_gt(&num_list![4.0, 2.0, 0.0], &mut env));
+        crisp_assert!(crisp_gt(&num_vec![5.0, 4.0], &mut env));
+        crisp_assert!(crisp_gt(&num_vec![4.0, 2.0, 0.0], &mut env));
 
-        crisp_assert_false!(crisp_gt(&num_list![5.0, 6.0], &mut env));
-        crisp_assert_false!(crisp_gt(&num_list![4.0, 2.0, 2.0], &mut env));
+        crisp_assert_false!(crisp_gt(&num_vec![5.0, 6.0], &mut env));
+        crisp_assert_false!(crisp_gt(&num_vec![4.0, 2.0, 2.0], &mut env));
     }
 
     #[test]
     fn test_gte() {
         let mut env = initialize_environment();
 
-        crisp_assert!(crisp_gte(&num_list![5.0, 4.0], &mut env));
-        crisp_assert!(crisp_gte(&num_list![4.0, 2.0, 0.0], &mut env));
-        crisp_assert!(crisp_gte(&num_list![4.0, 2.0, 2.0, 1.5], &mut env));
+        crisp_assert!(crisp_gte(&num_vec![5.0, 4.0], &mut env));
+        crisp_assert!(crisp_gte(&num_vec![4.0, 2.0, 0.0], &mut env));
+        crisp_assert!(crisp_gte(&num_vec![4.0, 2.0, 2.0, 1.5], &mut env));
 
-        crisp_assert_false!(crisp_gte(&num_list![5.0, 6.0], &mut env));
-        crisp_assert_false!(crisp_gte(&num_list![5.0, 4.0, 2.5, 3.0], &mut env));
+        crisp_assert_false!(crisp_gte(&num_vec![5.0, 6.0], &mut env));
+        crisp_assert_false!(crisp_gte(&num_vec![5.0, 4.0, 2.5, 3.0], &mut env));
     }
 
     #[test]
     fn test_lt() {
         let mut env = initialize_environment();
 
-        crisp_assert!(crisp_lt(&num_list![5.0, 6.0], &mut env));
-        crisp_assert!(crisp_lt(&num_list![4.0, 7.0, 10.0], &mut env));
+        crisp_assert!(crisp_lt(&num_vec![5.0, 6.0], &mut env));
+        crisp_assert!(crisp_lt(&num_vec![4.0, 7.0, 10.0], &mut env));
 
-        crisp_assert_false!(crisp_lt(&num_list![5.0, 1.0], &mut env));
-        crisp_assert_false!(crisp_lt(&num_list![4.0, 5.0, 5.0], &mut env));
+        crisp_assert_false!(crisp_lt(&num_vec![5.0, 1.0], &mut env));
+        crisp_assert_false!(crisp_lt(&num_vec![4.0, 5.0, 5.0], &mut env));
     }
 
     #[test]
     fn test_lte() {
         let mut env = initialize_environment();
 
-        crisp_assert!(crisp_lte(&num_list![5.0, 6.0], &mut env));
-        crisp_assert!(crisp_lte(&num_list![4.0, 7.0, 10.0], &mut env));
-        crisp_assert!(crisp_lte(&num_list![4.0, 5.0, 5.0, 5.5], &mut env));
+        crisp_assert!(crisp_lte(&num_vec![5.0, 6.0], &mut env));
+        crisp_assert!(crisp_lte(&num_vec![4.0, 7.0, 10.0], &mut env));
+        crisp_assert!(crisp_lte(&num_vec![4.0, 5.0, 5.0, 5.5], &mut env));
 
-        crisp_assert_false!(crisp_lte(&num_list![5.0, 1.0], &mut env));
-        crisp_assert_false!(crisp_lte(&num_list![5.0, 7.0, 8.0, 7.5], &mut env));
+        crisp_assert_false!(crisp_lte(&num_vec![5.0, 1.0], &mut env));
+        crisp_assert_false!(crisp_lte(&num_vec![5.0, 7.0, 8.0, 7.5], &mut env));
     }
 
     #[test]
@@ -431,11 +431,11 @@ mod tests {
                     Number(2.0)
                 ]
             ],
-            List(num_list![2.0, 3.0, 4.0])
+            num_list![2.0, 3.0, 4.0]
         ];
 
         assert_eq!(crisp_map(&args, &mut env).unwrap(),
-                   List(num_list![4.0, 6.0, 8.0]));
+                   num_list![4.0, 6.0, 8.0]);
 
         let args = vec![
             lambda![
@@ -446,11 +446,11 @@ mod tests {
                     sym!("b")
                 ]
             ],
-            List(num_list![1.0, 2.0, 10.0, 20.0, 100.0, 200.0])
+            num_list![1.0, 2.0, 10.0, 20.0, 100.0, 200.0]
         ];
 
         assert_eq!(crisp_map(&args, &mut env).unwrap(),
-                   List(num_list![3.0, 30.0, 300.0]));
+                   num_list![3.0, 30.0, 300.0]);
 
         // Test case passing in a function name
         env.data.insert("double".to_string(), lambda![
@@ -466,10 +466,10 @@ mod tests {
         let result = eval(&list![
             sym!("map"),
             sym!("double"),
-            List(num_list![2.0, 3.0, 4.0])
+            num_list![2.0, 3.0, 4.0]
         ], &mut env).unwrap();
 
-        assert_eq!(result, List(num_list![4.0, 6.0, 8.0]));
+        assert_eq!(result, num_list![4.0, 6.0, 8.0]);
     }
 
     #[test]
@@ -486,7 +486,7 @@ mod tests {
                 ]
             ],
             Number(10.0),
-            List(num_list![1.0, 2.0, 3.0])
+            num_list![1.0, 2.0, 3.0]
         ];
         let result = crisp_foldl(&args, &mut env).unwrap();
 
@@ -506,7 +506,7 @@ mod tests {
                     sym!("n")
                 ]
             ],
-            List(num_list![1.0, 2.0, 3.0])
+            num_list![1.0, 2.0, 3.0]
         ];
         let result = crisp_foldl1(&args, &mut env).unwrap();
 
@@ -538,7 +538,7 @@ mod tests {
         assert!(matches!(result, Err(CrispError::TypeError(_))));
 
         // Numbers
-        let result = extract_list::<f64>(&num_list![1.0, 2.0, 3.0]);
+        let result = extract_list::<f64>(&num_vec![1.0, 2.0, 3.0]);
         assert_eq!(result.unwrap(), vec![1.0, 2.0, 3.0]);
 
         // Bools
@@ -548,14 +548,14 @@ mod tests {
 
     #[test]
     fn test_backend_foldl() {
-        let list = num_list![3.0, 4.0, 2.0];
+        let list = num_vec![3.0, 4.0, 2.0];
         assert_eq!(backend_foldl::<f64, f64>(&list, 8.0, |acc, n| acc - n).unwrap(),
                    Number(-1.0));
     }
 
     #[test]
     fn test_backend_foldl1() {
-        let list = num_list![3.0, 4.0, 2.0];
+        let list = num_vec![3.0, 4.0, 2.0];
         assert_eq!(backend_foldl1::<f64>(&list, |acc, n| acc * n).unwrap(),
                    Number(24.0));
     }
