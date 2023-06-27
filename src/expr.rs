@@ -1,6 +1,6 @@
 use std::{fmt, rc::Rc};
 
-use crate::{env::CrispEnv, error::CrispError};
+use crate::{env::CrispEnv, error::CrispError, escape_string};
 
 #[derive(Clone)]
 pub enum CrispExpr {
@@ -21,7 +21,6 @@ pub struct CrispLambda {
 
 impl PartialEq for CrispExpr {
     fn eq(&self, other: &Self) -> bool {
-        // Implement your own equality logic here
         match (self, other) {
             (CrispExpr::Symbol(s1), CrispExpr::Symbol(s2)) => s1 == s2,
             (CrispExpr::CrispString(s1), CrispExpr::CrispString(s2)) => s1 == s2,
@@ -47,7 +46,12 @@ impl fmt::Display for CrispExpr {
             CrispExpr::Number(n) => n.to_string(),
             CrispExpr::Bool(b) => b.to_string(),
             CrispExpr::List(list) => format!("({})",
-                list.iter().map(|e| e.to_string()).collect::<Vec<String>>().join(" ")
+                list.iter().map(|e| {
+                    match e {
+                        CrispExpr::CrispString(s) => escape_string(s),
+                        _ => e.to_string()
+                    }
+                }).collect::<Vec<String>>().join(" ")
             ),
             CrispExpr::Func(_) => "<Func>".to_string(),
             CrispExpr::Lambda(_) => "<Lambda>".to_string()
