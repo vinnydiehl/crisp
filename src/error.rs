@@ -1,20 +1,23 @@
 use std::fmt;
 
-#[derive(Debug, PartialEq)]
+use colored::*;
+
+#[derive(PartialEq)]
 pub enum CrispError {
     ArgumentError(i32, i32),
-    TypeError(String),
+    LoadError(String),
     ParseError(String),
-    StandardError(String)
+    StandardError(String),
+    TypeError(String)
 }
 
 macro_rules! format_error {
     ($error_type:ident, $fmt:expr, $msg:expr) => {
-        format!(concat!("{}: ", $fmt), stringify!($error_type), $msg)
+        format!(concat!("[{}] ", $fmt), stringify!($error_type).bright_red(), $msg).bold()
     };
 
     ($error_type:ident, $fmt:expr, $msg:expr, $($arg:expr),*) => {
-        format!(concat!("{}: ", $fmt), stringify!($error_type), $msg, $($arg),*)
+        format!(concat!("[{}] ", $fmt), stringify!($error_type).bright_red(), $msg, $($arg),*).bold()
     };
 }
 
@@ -33,12 +36,19 @@ impl fmt::Display for CrispError {
                 }
             },
 
-            CrispError::TypeError(expected) => format_error!(TypeError, "Expected {}.", expected),
+            CrispError::LoadError(name) => format_error!(LoadError, "No such file or directory: {}", name),
             CrispError::ParseError(msg) => format_error!(ParseError, "{}", msg),
-            CrispError::StandardError(msg) => format_error!(StandardError, "{}", msg)
+            CrispError::StandardError(msg) => format_error!(StandardError, "{}", msg),
+            CrispError::TypeError(expected) => format_error!(TypeError, "Expected {}.", expected)
         };
 
         write!(f, "{}", error_message)
+    }
+}
+
+impl fmt::Debug for CrispError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(self, f)
     }
 }
 
@@ -96,9 +106,8 @@ macro_rules! generate_unwrapped_error_macro {
     }
 }
 
-generate_error_macro!(type_error, TypeError);
-
+generate_error_macro!(load_error, LoadError);
 generate_error_macro!(parse_error, ParseError);
 generate_unwrapped_error_macro!(parse_error_unwrapped, ParseError);
-
 generate_error_macro!(standard_error, StandardError);
+generate_error_macro!(type_error, TypeError);

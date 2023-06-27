@@ -1,19 +1,22 @@
 use crate::{env::{CrispEnv, initialize_environment}, error::CrispError,
             eval::eval, expr::CrispExpr, reader::{parse, tokenize}};
 
-use snailquote::escape;
 use std::{io::{ self, BufRead, Write }, collections::hash_map::Entry};
+
+use colored::*;
+use snailquote::escape;
 
 pub fn run() {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
 
     let env = &mut initialize_environment();
-    env.data.insert("crisp_repl_line_count".to_string(), CrispExpr::Number(0.0));
+
+    let ret_indicator = "=>".bright_green();
 
     loop {
-        // Increment/get the current line count. If the value has
-        // become corrupted, reset it to zero.
+        // Increment/get the current line count. If the value is
+        // empty or has become corrupted, reset it to zero.
         let repl_line_count = match env.data.entry("crisp_repl_line_count".to_string()) {
             Entry::Occupied(mut entry) => {
                 let value = entry.get_mut();
@@ -51,12 +54,12 @@ pub fn run() {
                             escaped if escaped == str => format!("'{}'", escaped),
                             escaped => escaped.to_string()
                         };
-                        println!("=> {}", s);
+                        println!("{} {}", ret_indicator, s);
                     }
-                    _ => println!("=> {}", ret)
+                    _ => println!("{} {}", ret_indicator, ret)
                 }
             }
-            Err(e) => println!("{}", e)
+            Err(e) => eprintln!("{}", e)
         }
     }
 }
