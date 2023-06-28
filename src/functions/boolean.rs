@@ -62,10 +62,39 @@ fold_compare!(crisp_gte, >=);
 fold_compare!(crisp_lt, <);
 fold_compare!(crisp_lte, <=);
 
+/// The `!` operator inverts one or more [`Bool`](CrispExpr)s. If one argument
+/// is provided, a `Bool` will be returned, otherwise the results will be
+/// mapped into a [`List`](CrispExpr) of `Bool`s.
+///
+/// # Examples
+///
+/// ```lisp
+/// ! true         ; => false
+/// ! false true   ; => (true false)
+/// ! (= 3 3) true ; => (false false)
+/// ```
+pub fn crisp_not(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 1, -1);
+
+    args.iter()
+        .map(|elem| match elem {
+            CrispExpr::Bool(b) => Ok(CrispExpr::Bool(!b)),
+            _ => type_error!("Bool"),
+        })
+        .collect::<Result<Vec<CrispExpr>, CrispError>>()
+        .map(|list| {
+            if list.len() == 1 {
+                list.into_iter().next().unwrap()
+            } else {
+                CrispExpr::List(list)
+            }
+        })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::env::initialize_environment;
+    use crate::{CrispExpr::*, env::initialize_environment};
 
     #[test]
     fn test_eq() {
@@ -122,5 +151,16 @@ mod tests {
 
         crisp_assert_false!(crisp_lte(&num_vec![5.0, 1.0], &mut env));
         crisp_assert_false!(crisp_lte(&num_vec![5.0, 7.0, 8.0, 7.5], &mut env));
+    }
+
+    #[test]
+    fn test_not() {
+        let mut env = initialize_environment();
+
+        crisp_assert!(crisp_not(&vec![Bool(false)], &mut env));
+        crisp_assert_false!(crisp_not(&vec![Bool(true)], &mut env));
+
+        assert_eq!(crisp_not(&vec![Bool(false), Bool(true), Bool(false)], &mut env).unwrap(),
+                   list![Bool(true), Bool(false), Bool(true)]);
     }
 }
