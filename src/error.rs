@@ -12,6 +12,10 @@ pub enum CrispError {
 }
 
 macro_rules! format_error {
+    ($error_type:ident, $fmt:expr) => {
+        format!(concat!("[{}] ", $fmt), stringify!($error_type).bright_red()).bold()
+    };
+
     ($error_type:ident, $fmt:expr, $msg:expr) => {
         format!(concat!("[{}] ", $fmt), stringify!($error_type).bright_red(), $msg).bold()
     };
@@ -27,9 +31,11 @@ impl fmt::Display for CrispError {
             CrispError::ArgumentError(min, max) => {
                 if min == max {
                     format_error!(ArgumentError, "{} arguments expected.", min)
+                } else if min == &0 && max == &0 {
+                    format_error!(ArgumentError, "No arguments expected.")
                 } else if max < &0 {
                     format_error!(ArgumentError, "{}+ arguments expected.", min)
-                } else if min < &0 {
+                } else if min <= &0 {
                     format_error!(ArgumentError, "Up to {} arguments expected.", max)
                 } else {
                     format_error!(ArgumentError, "{} to {} arguments expected.", min, max)
@@ -53,8 +59,8 @@ impl fmt::Debug for CrispError {
 }
 
 macro_rules! argument_error {
-    (-1, $max:expr) => {
-        Err(CrispError::ArgumentError(-1, $max))
+    (0, $max:expr) => {
+        Err(CrispError::ArgumentError(0, $max))
     };
 
     ($min:expr, -1) => {
@@ -67,9 +73,9 @@ macro_rules! argument_error {
 }
 
 macro_rules! check_argument_error {
-    ($args:expr, -1, $max:expr) => {
+    ($args:expr, 0, $max:expr) => {
         if $args.len() > $max {
-            return Err(CrispError::ArgumentError(-1, $max));
+            return Err(CrispError::ArgumentError(0, $max));
         }
     };
 

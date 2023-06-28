@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, process};
 
 use crate::{error::CrispError, expr::{CrispExpr, CrispLambda}, env::CrispEnv, eval::eval};
 
@@ -14,6 +14,7 @@ pub fn eval_keyword(expr: &CrispExpr, args: &[CrispExpr],
                 "let" => Some(eval_let(args, env)),
                 "\\" => Some(eval_keyword_lambda(args)),
                 "fn" => Some(eval_fn(args, env)),
+                "exit" => Some(eval_exit(args, env)),
                 _ => None
             }
         },
@@ -150,6 +151,26 @@ fn eval_fn(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispErr
     env.data.insert(name, lambda.clone());
 
     Ok(lambda.clone())
+}
+
+/// `exit` exits the program with the return code given to it. If no
+/// argument is given, exits with 0.
+///
+/// # Examples
+///
+/// ```lisp
+/// exit
+/// exit 1
+/// ```
+fn eval_exit(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 0, 1);
+
+    let code = match args.first() {
+        Some(CrispExpr::Number(n)) => n,
+        _ => &0.0
+    };
+
+    process::exit(code.round() as i32);
 }
 
 #[cfg(test)]

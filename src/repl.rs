@@ -1,6 +1,6 @@
 use crate::{CrispExpr, env::initialize_environment, print_return, send};
 
-use std::collections::hash_map::Entry;
+use std::{collections::hash_map::Entry, process};
 
 use colored::*;
 use rustyline::{error::ReadlineError, DefaultEditor};
@@ -77,7 +77,7 @@ pub fn run() {
                 });
             },
 
-            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => break,
+            Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => process::exit(130),
 
             Err(err) => {
                 println!("Error: {:?}", err);
