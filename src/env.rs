@@ -31,6 +31,7 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
     add_function!("mod", crisp_mod);
 
     add_function!("=", crisp_eq);
+    add_function!("!=", crisp_not_eq);
     add_function!(">", crisp_gt);
     add_function!(">=", crisp_gte);
     add_function!("<", crisp_lt);

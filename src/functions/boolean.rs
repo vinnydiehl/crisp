@@ -1,7 +1,9 @@
+use std::collections::HashSet;
+
 use crate::{error::CrispError, expr::CrispExpr,
             env::CrispEnv, functions::{backend_foldl, extract_value}};
 
-/// The equality operator ensures that all elements of a [`List`](CrispExpr)
+/// The `=` operator checks if all elements of a [`List`](CrispExpr)
 /// are the same.
 ///
 /// # Examples
@@ -19,6 +21,25 @@ pub fn crisp_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, Cr
     // Fold across the list, comparing each value to the first (as opposed to the
     // rest of the boolean comparisons, which compare to the previous value)
     backend_foldl::<bool, f64>(&args[1..], true, |acc, n| acc && n == first_value)
+}
+
+/// The `!=` operator checks if all elements of a [`List`](CrispExpr)
+/// are unique.
+///
+/// # Examples
+///
+/// ```lisp
+/// (!= 5 5)                ; => false
+/// (!= 5 (+ 3 2) (- 10 5)) ; => false
+/// (!= 2 5 4 5)            ; => false
+/// (!= 5 1 4 0)            ; => true
+/// ```
+pub fn crisp_not_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
+    check_argument_error!(args, 2, -1);
+
+    let uniq_values: Vec<&CrispExpr> = args.iter().collect::<HashSet<_>>().into_iter().collect();
+
+    Ok(CrispExpr::Bool(args.len() == uniq_values.len()))
 }
 
 /// The comparison operators ensure that a [`List`](CrispExpr) increases or
@@ -105,6 +126,17 @@ mod tests {
 
         crisp_assert_false!(crisp_eq(&num_vec![5.0, 4.0], &mut env));
         crisp_assert_false!(crisp_eq(&num_vec![5.0, 4.0, 5.0], &mut env));
+    }
+
+    #[test]
+    fn test_not_eq() {
+        let mut env = initialize_environment();
+
+        crisp_assert!(crisp_not_eq(&num_vec![5.0, 4.0], &mut env));
+        crisp_assert!(crisp_not_eq(&num_vec![5.0, 4.0, 10.0, 0.0], &mut env));
+
+        crisp_assert_false!(crisp_not_eq(&num_vec![5.0, 5.0], &mut env));
+        crisp_assert_false!(crisp_not_eq(&num_vec![5.0, 4.0, 10.0, 4.0], &mut env));
     }
 
     #[test]

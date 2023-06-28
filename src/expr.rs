@@ -1,4 +1,4 @@
-use std::{fmt, rc::Rc};
+use std::{fmt, hash::{Hasher, Hash}, rc::Rc};
 
 use crate::{env::CrispEnv, error::CrispError, escape_string};
 
@@ -31,6 +31,8 @@ impl PartialEq for CrispExpr {
         }
     }
 }
+
+impl Eq for CrispExpr {}
 
 impl fmt::Debug for CrispExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -96,5 +98,28 @@ impl IntoCrispExpr for bool {
 impl IntoCrispExpr for f64 {
     fn into_crisp_expr(self) -> CrispExpr {
         CrispExpr::Number(self)
+    }
+}
+
+impl Hash for CrispExpr {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            CrispExpr::Symbol(s) => s.hash(state),
+            CrispExpr::CrispString(s) => s.hash(state),
+            // Convert the number to its IEEE 754 binary representation and hash it
+            CrispExpr::Number(n) => state.write_u64(n.to_bits()),
+            // Convert the boolean to a u8 (0 for false, 1 for true)
+            CrispExpr::Bool(b) => state.write_u8(*b as u8),
+            CrispExpr::List(list) => list.hash(state),
+            // TODO: Figure out a way to hash lambdas/funcs
+            _ => {}
+        }
+    }
+}
+
+impl Hash for CrispLambda {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // Hash the Rc references to ensure the content is hashed
+        self.args.as_ref().hash(state)
     }
 }
