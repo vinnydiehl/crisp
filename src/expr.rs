@@ -67,11 +67,29 @@ pub trait FromCrispExpr: Sized {
     fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError>;
 }
 
+impl FromCrispExpr for String {
+    fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
+        match expr {
+            CrispExpr::CrispString(s) => Ok(s.clone()),
+            _ => type_error!("String"),
+        }
+    }
+}
+
 impl FromCrispExpr for f64 {
     fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
         match expr {
             CrispExpr::Number(n) => Ok(*n),
             _ => type_error!("Number"),
+        }
+    }
+}
+
+impl FromCrispExpr for Vec<CrispExpr> {
+    fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
+        match expr {
+            CrispExpr::List(list) => Ok(list.clone()),
+            _ => type_error!("List"),
         }
     }
 }
@@ -89,15 +107,27 @@ pub trait IntoCrispExpr {
     fn into_crisp_expr(self) -> CrispExpr;
 }
 
-impl IntoCrispExpr for bool {
+impl IntoCrispExpr for String {
     fn into_crisp_expr(self) -> CrispExpr {
-        CrispExpr::Bool(self)
+        CrispExpr::CrispString(self)
     }
 }
 
 impl IntoCrispExpr for f64 {
     fn into_crisp_expr(self) -> CrispExpr {
         CrispExpr::Number(self)
+    }
+}
+
+impl IntoCrispExpr for Vec<CrispExpr> {
+    fn into_crisp_expr(self) -> CrispExpr {
+        CrispExpr::List(self)
+    }
+}
+
+impl IntoCrispExpr for bool {
+    fn into_crisp_expr(self) -> CrispExpr {
+        CrispExpr::Bool(self)
     }
 }
 
