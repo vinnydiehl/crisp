@@ -34,7 +34,7 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
             parse_error_unwrapped!(format!("Could not find symbol: {}", name))
         ),
 
-        // It's a string, number, or bool, send it
+        CrispExpr::Char(_) => Ok(expr.clone()),
         CrispExpr::CrispString(_) => Ok(expr.clone()),
         CrispExpr::Number(_) => Ok(expr.clone()),
         CrispExpr::Bool(_) => Ok(expr.clone()),

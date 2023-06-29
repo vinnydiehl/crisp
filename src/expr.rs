@@ -5,6 +5,7 @@ use crate::{env::CrispEnv, error::CrispError, escape_string};
 #[derive(Clone)]
 pub enum CrispExpr {
     Symbol(String),
+    Char(char),
     CrispString(String),
     Number(f64),
     Bool(bool),
@@ -23,6 +24,7 @@ impl PartialEq for CrispExpr {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (CrispExpr::Symbol(s1), CrispExpr::Symbol(s2)) => s1 == s2,
+            (CrispExpr::Char(c1), CrispExpr::Char(c2)) => c1 == c2,
             (CrispExpr::CrispString(s1), CrispExpr::CrispString(s2)) => s1 == s2,
             (CrispExpr::Number(n1), CrispExpr::Number(n2)) => n1 == n2,
             (CrispExpr::List(l1), CrispExpr::List(l2)) => l1 == l2,
@@ -44,6 +46,7 @@ impl fmt::Display for CrispExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = match self {
             CrispExpr::Symbol(s) => s.clone(),
+            CrispExpr::Char(c) => format!(",{}", c),
             CrispExpr::CrispString(s) => s.clone(),
             CrispExpr::Number(n) => n.to_string(),
             CrispExpr::Bool(b) => b.to_string(),
@@ -65,6 +68,15 @@ impl fmt::Display for CrispExpr {
 
 pub trait FromCrispExpr: Sized {
     fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError>;
+}
+
+impl FromCrispExpr for char {
+    fn from_crisp_expr(expr: &CrispExpr) -> Result<Self, CrispError> {
+        match expr {
+            CrispExpr::Char(n) => Ok(*n),
+            _ => type_error!("Char"),
+        }
+    }
 }
 
 impl FromCrispExpr for String {
@@ -107,6 +119,12 @@ pub trait IntoCrispExpr {
     fn into_crisp_expr(self) -> CrispExpr;
 }
 
+impl IntoCrispExpr for char {
+    fn into_crisp_expr(self) -> CrispExpr {
+        CrispExpr::Char(self)
+    }
+}
+
 impl IntoCrispExpr for String {
     fn into_crisp_expr(self) -> CrispExpr {
         CrispExpr::CrispString(self)
@@ -135,6 +153,7 @@ impl Hash for CrispExpr {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             CrispExpr::Symbol(s) => s.hash(state),
+            CrispExpr::Char(c) => (*c as u32).hash(state),
             CrispExpr::CrispString(s) => s.hash(state),
             // Convert the number to its IEEE 754 binary representation and hash it
             CrispExpr::Number(n) => state.write_u64(n.to_bits()),

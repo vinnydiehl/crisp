@@ -2,6 +2,19 @@ use crate::{error::CrispError, expr::CrispExpr};
 
 use snailquote::unescape;
 
+/// The tokenizer alternates between these states as it scans across the input
+/// character-by-character. `Scanning` is the default state, indicating that we
+/// are reading tokens that are delimited by whitespace (or parens). Tokens with
+/// special indicators (e.g. [`String`](CrispExpr)s) will change the tokenizer's
+/// state temporarily so that it can cut and process that token according to
+/// the desired rules.
+enum TokenState {
+    Scanning,
+
+    Char,
+    String
+}
+
 /// Tokenizes a piece of code. `(` and `)` are their own tokens; everything
 /// else is delimited by whitespace.
 pub fn tokenize(mut input: String) -> Vec<String> {
@@ -12,56 +25,72 @@ pub fn tokenize(mut input: String) -> Vec<String> {
 
     let mut tokens = Vec::new();
     let mut current_token = String::new();
-    let mut in_string = false;
+    let mut state = TokenState::Scanning;
 
     for ch in input.chars() {
-        if in_string {
-            match ch {
-                '"' | '\'' if current_token.chars().last().unwrap() != '\\' => {
-                    current_token.push(ch);
-                    tokens.push(current_token.clone());
-                    current_token.clear();
-                    in_string = false;
-                },
+        match state {
+            TokenState::Scanning => {
+                match ch {
+                    ',' => {
+                        state = TokenState::Char;
+                        current_token.push(ch);
+                    }
 
-                // Otherwise, just a normal character
-                _ => current_token.push(ch)
-            }
-        } else {
-            match ch {
-                '"' | '\'' => {
-                    in_string = true;
-                    current_token.push(ch);
-                },
+                    '"' | '\'' => {
+                        state = TokenState::String;
+                        current_token.push(ch);
+                    },
 
-                ' ' | '\n' | '\t' => {
-                    // End of non-string token
-                    if !current_token.is_empty() {
+                    ' ' | '\n' | '\t' => {
+                        // End of token
+                        if !current_token.is_empty() {
+                            tokens.push(current_token.clone());
+                            current_token.clear();
+                        }
+                    },
+
+                    '(' => {
+                        // End of token
+                        if !current_token.is_empty() {
+                            tokens.push(current_token.clone());
+                            current_token.clear();
+                        }
+                        tokens.push("(".to_string());
+                    },
+
+                    ')' => {
+                        // End of token
+                        if !current_token.is_empty() {
+                            tokens.push(current_token.clone());
+                            current_token.clear();
+                        }
+                        tokens.push(")".to_string());
+                    },
+
+                    // Otherwise, we're still mid-token
+                    _ => current_token.push(ch)
+                }
+            },
+
+            TokenState::Char => {
+                current_token.push(ch);
+                tokens.push(current_token.clone());
+                current_token.clear();
+                state = TokenState::Scanning;
+            },
+
+            TokenState::String => {
+                match ch {
+                    '"' | '\'' if current_token.chars().last().unwrap() != '\\' => {
+                        current_token.push(ch);
                         tokens.push(current_token.clone());
                         current_token.clear();
-                    }
-                },
+                        state = TokenState::Scanning;
+                    },
 
-                '(' => {
-                    // End of non-string token
-                    if !current_token.is_empty() {
-                        tokens.push(current_token.clone());
-                        current_token.clear();
-                    }
-                    tokens.push("(".to_string());
-                },
-
-                ')' => {
-                    // End of non-string token
-                    if !current_token.is_empty() {
-                        tokens.push(current_token.clone());
-                        current_token.clear();
-                    }
-                    tokens.push(")".to_string());
-                },
-
-                // Otherwise, we're still mid-token
-                _ => current_token.push(ch)
+                    // Otherwise, just a normal character
+                    _ => current_token.push(ch)
+                }
             }
         }
     }
@@ -117,12 +146,20 @@ fn parse_atom(token: &str) -> Result<CrispExpr, CrispError> {
         "true" => CrispExpr::Bool(true),
         "false" => CrispExpr::Bool(false),
         _ => {
-            if token.starts_with('"') || token.starts_with('\'') {
-                unescape(token).map(CrispExpr::CrispString)
-                               .map_err(|_| parse_error_unwrapped!("Invalid string."))?
-            } else {
-                token.parse().map(CrispExpr::Number)
-                             .unwrap_or_else(|_| sym!(token))
+            match token.chars().next().unwrap() {
+                ',' => {
+                    CrispExpr::Char(token.chars().nth(1).unwrap())
+                },
+
+                '"' | '\'' => {
+                    unescape(token).map(CrispExpr::CrispString)
+                                   .map_err(|_| parse_error_unwrapped!("Invalid string."))?
+                },
+
+                _ => {
+                    token.parse().map(CrispExpr::Number)
+                                 .unwrap_or_else(|_| sym!(token))
+                }
             }
         }
     };
@@ -148,6 +185,18 @@ mod tests {
 
         assert_eq!(tokenize("(* 5\n    (+\t3 2))".to_string()),
                    vec!["(", "*", "5", "(", "+", "3", "2", ")", ")"]);
+    }
+
+    #[test]
+    fn test_tokenize_chars() {
+        assert_eq!(tokenize("(,a)".to_string()),
+                   vec!["(", ",a", ")"]);
+
+        assert_eq!(tokenize("(,a ,b ,c)".to_string()),
+                   vec!["(", ",a", ",b", ",c", ")"]);
+
+        assert_eq!(tokenize("(,a,b,c)".to_string()),
+                   vec!["(", ",a", ",b", ",c", ")"]);
     }
 
     #[test]
@@ -195,12 +244,19 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_atom() {
-        assert_eq!(parse_atom("+").unwrap(),
-                   sym!("+"));
+    fn test_parse_symbol() {
+        assert_eq!(parse_atom("foo").unwrap(), sym!("foo"));
+        assert_eq!(parse_atom("var-name").unwrap(), sym!("var-name"));
+        assert_eq!(parse_atom("+").unwrap(), sym!("+"));
+    }
 
-        assert_eq!(parse_atom("3.14").unwrap(),
-                   Number(3.14));
+    #[test]
+    fn test_parse_char() {
+        assert_eq!(parse_atom(",a").unwrap(), Char('a'));
+        assert_eq!(parse_atom(", ").unwrap(), Char(' '));
+        assert_eq!(parse_atom(",\\").unwrap(), Char('\\'));
+        assert_eq!(parse_atom(",\"").unwrap(), Char('"'));
+        assert_eq!(parse_atom(",'").unwrap(), Char('\''));
     }
 
     #[test]
@@ -219,6 +275,15 @@ mod tests {
 
         assert_eq!(parse_atom("'foo\n\t\r  bar'").unwrap(),
                    str!("foo\n\t\r  bar"));
+    }
+
+    #[test]
+    fn test_parse_number() {
+        assert_eq!(parse_atom("0").unwrap(), Number(0.0));
+        assert_eq!(parse_atom("1").unwrap(), Number(1.0));
+        assert_eq!(parse_atom("3.14").unwrap(), Number(3.14));
+        assert_eq!(parse_atom("420").unwrap(), Number(420.0));
+        assert_eq!(parse_atom("-420").unwrap(), Number(-420.0));
     }
 
     #[test]
