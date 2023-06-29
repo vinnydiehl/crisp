@@ -5,7 +5,7 @@ use std::{collections::hash_map::Entry, process};
 use colored::*;
 use rustyline::{error::ReadlineError, DefaultEditor};
 
-/// The Read/Execute/Print Loop (REPL). Continually prompts the user for
+/// The Read-Eval-Print Loop (REPL). Continually prompts the user for
 /// expressions, which it evaluates immediately and prints the return value,
 /// maintaining an environment so the user may execute a program line-by-line.
 pub fn run() {

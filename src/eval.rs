@@ -14,13 +14,16 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
                 Some(response) => response,
                 None => {
                     // Is the first item a function? (Func is built-in, Lambda is user-defined)
-                    let first_eval = eval(head, env)?;
-                    match first_eval {
+                    match eval(head, env)? {
                         CrispExpr::Func(func) => func(&eval_across_list(args, env)?, env),
                         CrispExpr::Lambda(lambda) => eval_lambda(lambda, args, env),
 
                         // None of the above, evaluate everything and send it
-                        _ => Ok(CrispExpr::List(eval_across_list(&list[..], env)?))
+                        first => {
+                            let mut eval_result = eval_across_list(&list[1..], env)?;
+                            eval_result.insert(0, first);
+                            Ok(CrispExpr::List(eval_result))
+                        }
                     }
                 }
             }
@@ -115,6 +118,25 @@ mod tests {
         let result = eval(&expr, &mut env).unwrap();
 
         assert_eq!(result, Number(9.0));
+    }
+
+    #[test]
+    fn test_eval_list_nested_func() {
+        let mut env = initialize_environment();
+
+        env.data.insert("n".to_string(), Number(5.0));
+        let expr = list![list![list![
+            sym!("let"),
+            sym!("n"),
+            list![
+                sym!("+"),
+                Number(1.0),
+                sym!("n")
+            ]
+        ]]];
+        eval(&expr, &mut env).unwrap();
+
+        assert_eq!(env.data.get("n").unwrap(), &Number(6.0));
     }
 
     #[test]
