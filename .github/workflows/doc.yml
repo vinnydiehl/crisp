@@ -1,0 +1,57 @@
+on:
+  push:
+    branches: [main]
+
+name: Generate Documentation
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Load cached dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Prepare docs for GitHub Pages
+        shell: sh
+        run: cargo tree --depth 1 -e normal --prefix none | cut -d' ' -f1 | xargs printf -- '-p %s\n' | xargs cargo doc --no-deps
+
+      - name: Prepare docs for GitHub Pages
+        shell: sh
+        run: |
+          mv target/doc _site
+          # This stupid file was giving a permission error during deployment
+          chmod +rX _site/.lock
+          # Redirect root to crisp/index.html
+          echo '<meta http-equiv="refresh" content="0; url=https://vinnydiehl.github.io/crisp/crisp/index.html">' > _site/index.html
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v1
+
+  deploy:
+    needs: build
+
+    # Permissions to deploy to GH Pages
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
