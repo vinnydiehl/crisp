@@ -109,6 +109,15 @@ fn eval_keyword_lambda(args: &[CrispExpr]) -> Result<CrispExpr, CrispError> {
         _ => return type_error!("Symbol || List<Symbol>"),
     };
 
+    // Make sure all elements in the arg_list are Symbols
+    if let CrispExpr::List(list) = &arg_list {
+        for arg in list {
+            if !matches!(arg, CrispExpr::Symbol(_)) {
+                return type_error!("Symbol || List<Symbol>");
+            }
+        }
+    }
+
     Ok(CrispExpr::Lambda(CrispLambda {
         args: Rc::new(arg_list),
         func: Rc::new(args.get(1).unwrap().clone()),
@@ -492,7 +501,7 @@ mod tests {
             ]
         ];
 
-        assert!(eval(&call, &mut env).is_err());
+        crisp_assert_err!(eval(&call, &mut env), TypeError);
 
         // Symbol in args list (occurs at lambda call)
         let mut env = initialize_environment();
@@ -513,7 +522,7 @@ mod tests {
             Number(2.0)
         ];
 
-        assert!(eval(&call, &mut env).is_err());
+        crisp_assert_err!(eval(&call, &mut env), TypeError);
 
         // Too few args
         let mut env = initialize_environment();
@@ -522,7 +531,7 @@ mod tests {
             Number(3.0)
         ];
 
-        assert!(eval(&call, &mut env).is_err());
+        crisp_assert_err!(eval(&call, &mut env), ArgumentError);
 
         // Too many args
         let mut env = initialize_environment();
@@ -537,7 +546,7 @@ mod tests {
             Bool(true)
         ];
 
-        assert!(eval(&call, &mut env).is_err());
+        crisp_assert_err!(eval(&call, &mut env), ArgumentError);
     }
 
     // fn keyword

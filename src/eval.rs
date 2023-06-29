@@ -82,9 +82,7 @@ mod tests {
     #[test]
     fn test_eval_symbol_not_found() {
         let mut env = initialize_environment();
-
-        let expr = sym!("x");
-        assert!(eval(&expr, &mut env).is_err());
+        crisp_assert_err!(eval(&sym!("x"), &mut env), ParseError);
     }
 
     #[test]

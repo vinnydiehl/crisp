@@ -66,3 +66,9 @@ macro_rules! crisp_assert_eq {
         assert_eq!($expr.unwrap(), CrispExpr::Number($result));
     }
 }
+
+macro_rules! crisp_assert_err {
+    ($expr:expr, $error_type:ident) => {
+        assert!(matches!($expr, Err(CrispError::$error_type(..))));
+    }
+}

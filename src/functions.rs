@@ -67,9 +67,7 @@ mod tests {
         assert_eq!(result.unwrap(), 42.0);
 
         // Test case with a non-number
-        let expr = sym!("abc");
-        let result = extract_value::<f64>(&expr);
-        assert!(matches!(result, Err(CrispError::TypeError(_))));
+        crisp_assert_err!(extract_value::<f64>(&sym!("abc")), TypeError);
     }
 
     #[test]
@@ -80,7 +78,7 @@ mod tests {
             Number(2.0),
             sym!("foo")
         ]);
-        assert!(matches!(result, Err(CrispError::TypeError(_))));
+        crisp_assert_err!(result, TypeError);
 
         // Numbers
         let result = extract_list::<f64>(&num_vec![1.0, 2.0, 3.0]);
