@@ -25,6 +25,18 @@ macro_rules! lambda {
     }};
 }
 
+macro_rules! bool_list {
+    ($($elem:expr),*) => {
+        CrispExpr::List(vec![$(CrispExpr::Bool($elem)),*])
+    }
+}
+
+macro_rules! bool_vec {
+    ($($elem:expr),*) => {
+        vec![$(CrispExpr::Bool($elem)),*]
+    }
+}
+
 macro_rules! num_list {
     ($($elem:expr),*) => {
         CrispExpr::List(vec![$(CrispExpr::Number($elem)),*])

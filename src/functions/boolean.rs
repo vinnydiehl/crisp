@@ -42,15 +42,23 @@ pub fn crisp_not_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr
     Ok(CrispExpr::Bool(args.len() == uniq_values.len()))
 }
 
-/// The comparison operators ensure that a [`List`](CrispExpr) increases or
-/// decreases monotonically. These functions are set with macros:
+/// The numeric comparison operators check if a [`List`](CrispExpr) of
+/// [`Number`](CrispExpr)s increases or decreases monotonically. These
+/// functions are set with macros:
 ///
 ///  * `>`
 ///  * `>=`
 ///  * `<`
 ///  * `<=`
 ///
+/// There are also some boolean comparison operators set through this macro:
+///
+///  * `&&`
+///  * `||`
+///
 /// # Examples
+///
+/// ### Numeric comparisons
 ///
 /// ```lisp
 /// (> 5 4)      ; => true
@@ -61,15 +69,30 @@ pub fn crisp_not_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr
 /// (< 3 10)     ; => true
 /// (<= 3 3)     ; => true
 /// ```
+///
+/// ### Boolean comparisons
+///
+/// `&&` is the logical AND operator, and `||` is for logical OR.
+///
+/// ```lisp
+/// (&& (> 5 4) (= 3 3))                   ; => true
+/// (&& (> 5 4) (= 3 9))                   ; => false
+/// (&& (> 5 4) (= 3 3) (< 0 10) (>= 6 6)) ; => true
+/// (&& (= 5 4) (= 3 3) (< 0 10) (>= 6 6)) ; => false
+///
+/// (|| (> 5 4) (= 3 9))                   ; => true
+/// (|| (> 4 5) (= 3 9))                   ; => false
+/// (|| (= 10 3) (= 4 6) (= 1 2) (> 5 4))  ;=> true
+/// ````
 macro_rules! fold_compare {
-    ($name:ident, $op:tt) => {
+    ($name:ident, $op:tt, $type:ty) => {
         /// See [`fold_compare`].
         pub fn $name(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
             check_argument_error!(args, 2, -1);
 
-            let mut prev_value = extract_value::<f64>(args.first().unwrap())?;
+            let mut prev_value = extract_value::<$type>(args.first().unwrap())?;
 
-            backend_foldl::<bool, f64>(&args[1..], true, |acc, n| {
+            backend_foldl::<bool, $type>(&args[1..], true, |acc, n| {
                 let result = acc && prev_value $op n;
                 prev_value = n;
                 result
@@ -78,10 +101,10 @@ macro_rules! fold_compare {
     };
 }
 
-fold_compare!(crisp_gt, >);
-fold_compare!(crisp_gte, >=);
-fold_compare!(crisp_lt, <);
-fold_compare!(crisp_lte, <=);
+fold_compare!(crisp_gt, >, f64);
+fold_compare!(crisp_gte, >=, f64);
+fold_compare!(crisp_lt, <, f64);
+fold_compare!(crisp_lte, <=, f64);
 
 /// The `!` operator inverts one or more [`Bool`](CrispExpr)s. If one argument
 /// is provided, a `Bool` will be returned, otherwise the results will be
@@ -112,10 +135,13 @@ pub fn crisp_not(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, C
         })
 }
 
+fold_compare!(crisp_and, &&, bool);
+fold_compare!(crisp_or, ||, bool);
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{CrispExpr::*, env::initialize_environment};
+    use crate::env::initialize_environment;
 
     #[test]
     fn test_eq() {
@@ -189,10 +215,36 @@ mod tests {
     fn test_not() {
         let mut env = initialize_environment();
 
-        crisp_assert!(crisp_not(&vec![Bool(false)], &mut env));
-        crisp_assert_false!(crisp_not(&vec![Bool(true)], &mut env));
+        crisp_assert!(crisp_not(&bool_vec![false], &mut env));
+        crisp_assert_false!(crisp_not(&bool_vec![true], &mut env));
 
-        assert_eq!(crisp_not(&vec![Bool(false), Bool(true), Bool(false)], &mut env).unwrap(),
-                   list![Bool(true), Bool(false), Bool(true)]);
+        assert_eq!(crisp_not(&bool_vec![false, true, false], &mut env).unwrap(),
+                   bool_list![true, false, true]);
+    }
+
+    #[test]
+    fn test_and() {
+        let mut env = initialize_environment();
+
+        crisp_assert!(crisp_and(&bool_vec![true, true], &mut env));
+        crisp_assert!(crisp_and(&bool_vec![true, true, true], &mut env));
+        crisp_assert!(crisp_and(&bool_vec![true, true, true, true, true], &mut env));
+
+        crisp_assert_false!(crisp_and(&bool_vec![false, false], &mut env));
+        crisp_assert_false!(crisp_and(&bool_vec![false, true], &mut env));
+        crisp_assert_false!(crisp_and(&bool_vec![true, true, false, true], &mut env));
+        crisp_assert_false!(crisp_and(&bool_vec![true, true, true, true, false], &mut env));
+    }
+
+    #[test]
+    fn test_or() {
+        let mut env = initialize_environment();
+
+        crisp_assert!(crisp_or(&bool_vec![false, true], &mut env));
+        crisp_assert!(crisp_or(&bool_vec![true, false, true], &mut env));
+        crisp_assert!(crisp_or(&bool_vec![false, false, false, false, false, true], &mut env));
+
+        crisp_assert_false!(crisp_or(&bool_vec![false, false], &mut env));
+        crisp_assert_false!(crisp_or(&bool_vec![false, false, false, false], &mut env));
     }
 }
