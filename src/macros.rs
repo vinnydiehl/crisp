@@ -49,6 +49,18 @@ macro_rules! num_vec {
     }
 }
 
+macro_rules! string_list {
+    ($($elem:expr),*) => {
+        CrispExpr::List(vec![$(CrispExpr::CrispString($elem.to_string())),*])
+    }
+}
+
+macro_rules! string_vec {
+    ($($elem:expr),*) => {
+        vec![$(CrispExpr::CrispString($elem.to_string())),*]
+    }
+}
+
 macro_rules! crisp_assert {
     ($expr:expr) => {
         assert_eq!($expr.unwrap(), CrispExpr::Bool(true));

@@ -16,11 +16,9 @@ use crate::{error::CrispError, expr::CrispExpr,
 pub fn crisp_eq(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     check_argument_error!(args, 2, -1);
 
-    let first_value = extract_value::<f64>(args.first().unwrap())?;
+    let uniq_values: Vec<&CrispExpr> = args.iter().collect::<HashSet<_>>().into_iter().collect();
 
-    // Fold across the list, comparing each value to the first (as opposed to the
-    // rest of the boolean comparisons, which compare to the previous value)
-    backend_foldl::<bool, f64>(&args[1..], true, |acc, n| acc && n == first_value)
+    Ok(CrispExpr::Bool(uniq_values.len() == 1))
 }
 
 /// The `!=` operator checks if all elements of a [`List`](CrispExpr)
@@ -141,7 +139,7 @@ fold_compare!(crisp_or, ||, bool);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::env::initialize_environment;
+    use crate::{env::initialize_environment, expr::CrispExpr::*};
 
     #[test]
     fn test_eq() {
@@ -149,9 +147,12 @@ mod tests {
 
         crisp_assert!(crisp_eq(&num_vec![5.0, 5.0], &mut env));
         crisp_assert!(crisp_eq(&num_vec![30.0, 30.0, 30.0], &mut env));
+        crisp_assert!(crisp_eq(&string_vec!["foo", "foo"], &mut env));
 
         crisp_assert_false!(crisp_eq(&num_vec![5.0, 4.0], &mut env));
         crisp_assert_false!(crisp_eq(&num_vec![5.0, 4.0, 5.0], &mut env));
+        crisp_assert_false!(crisp_eq(&string_vec!["foo", "bar"], &mut env));
+        crisp_assert_false!(crisp_eq(&vec![str!("foo"), Number(5.0)], &mut env));
     }
 
     #[test]
@@ -160,9 +161,12 @@ mod tests {
 
         crisp_assert!(crisp_not_eq(&num_vec![5.0, 4.0], &mut env));
         crisp_assert!(crisp_not_eq(&num_vec![5.0, 4.0, 10.0, 0.0], &mut env));
+        crisp_assert!(crisp_not_eq(&string_vec!["foo", "bar"], &mut env));
+        crisp_assert!(crisp_not_eq(&vec![str!("foo"), Number(5.0)], &mut env));
 
         crisp_assert_false!(crisp_not_eq(&num_vec![5.0, 5.0], &mut env));
         crisp_assert_false!(crisp_not_eq(&num_vec![5.0, 4.0, 10.0, 4.0], &mut env));
+        crisp_assert_false!(crisp_not_eq(&string_vec!["foo", "foo"], &mut env));
     }
 
     #[test]
