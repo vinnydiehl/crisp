@@ -17,12 +17,7 @@ enum TokenState {
 
 /// Tokenizes a piece of code. `(` and `)` are their own tokens; everything
 /// else is delimited by whitespace.
-pub fn tokenize(mut input: String) -> Vec<String> {
-    // Allow outer parens to be left off
-    if !input.trim().starts_with("(") {
-        input = format!("({})", input);
-    }
-
+pub fn tokenize(input: String) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current_token = String::new();
     let mut state = TokenState::Scanning;
@@ -95,6 +90,18 @@ pub fn tokenize(mut input: String) -> Vec<String> {
         }
     }
 
+    // If the outer parens are left off (see next if statement), there might
+    // be a dangling token at the end
+    if !current_token.is_empty() {
+        tokens.push(current_token.clone());
+    }
+
+    // Allow outer parens to be left off
+    if tokens.len() > 1 && *tokens.first().unwrap() != "(".to_string() {
+        tokens.insert(0, "(".to_string());
+        tokens.push(")".to_string());
+    }
+
     tokens
 }
 
@@ -113,7 +120,7 @@ pub fn parse<'a>(tokens: &'a[String]) -> Result<(CrispExpr, &'a[String]), CrispE
     match &head[..] {
         "(" => parse_seq(tail),
         ")" => parse_error!("Unexpected `)`."),
-        _   => Ok((parse_atom(head)?, tail))
+        _ => Ok((parse_atom(head)?, tail))
     }
 }
 
@@ -233,6 +240,12 @@ mod tests {
 
     #[test]
     fn test_tokenize_no_outer_parens() {
+        assert_eq!(tokenize("1".to_string()),
+                   vec!["1"]);
+
+        assert_eq!(tokenize("'hello world!'".to_string()),
+                   vec!["'hello world!'"]);
+
         assert_eq!(tokenize("+ 3 var".to_string()),
                    vec!["(", "+", "3", "var", ")"]);
 
