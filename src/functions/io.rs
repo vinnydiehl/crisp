@@ -35,10 +35,16 @@ pub fn crisp_format(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr
 /// puts "Number: {}" 5
 /// ```
 pub fn crisp_puts(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
-    let value = crisp_format(args, env)?;
-    println!("{}", value);
+    if args.is_empty() {
+        println!();
 
-    Ok(value)
+        Ok(CrispExpr::Nil)
+    } else {
+        let value = crisp_format(args, env)?;
+        println!("{}", value);
+
+        Ok(value)
+    }
 }
 
 /// `print` prints the specified value, with no newline. It takes format

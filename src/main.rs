@@ -104,7 +104,14 @@ fn process_expr(expr: &String, env: &mut CrispEnv, print_ret: bool) -> Result<Cr
 /// Parses and evaluates an expression from a Rust [`String`].
 pub fn send(input: String, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     let (ast, _) = parse(&tokenize(input))?;
-    Ok(eval(&ast, env)?)
+
+    // Eval the AST
+    match eval(&ast, env)? {
+        // If it evals to a Func, it's a func with no arguments, we need to run it
+        CrispExpr::Func(func) => eval_func(func, &[], env),
+        // Otherwise we're golden
+        result => Ok(result)
+    }
 }
 
 /// Prints the return value from the [`CrispExpr`] `ret`, with a colored
