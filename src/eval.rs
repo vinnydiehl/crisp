@@ -36,6 +36,7 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
 
         CrispExpr::Char(_) => Ok(expr.clone()),
         CrispExpr::CrispString(_) => Ok(expr.clone()),
+        CrispExpr::Nil => Ok(expr.clone()),
         CrispExpr::Number(_) => Ok(expr.clone()),
         CrispExpr::Bool(_) => Ok(expr.clone()),
 

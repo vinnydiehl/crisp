@@ -12,6 +12,7 @@ enum TokenState {
     Scanning,
 
     Char,
+    Comment,
     String
 }
 
@@ -29,7 +30,16 @@ pub fn tokenize(input: String) -> Vec<String> {
                     ',' => {
                         state = TokenState::Char;
                         current_token.push(ch);
-                    }
+                    },
+
+                    ';' => {
+                        if !current_token.is_empty() {
+                            tokens.push(current_token.clone());
+                            current_token.clear();
+                        }
+
+                        state = TokenState::Comment;
+                    },
 
                     '"' | '\'' => {
                         state = TokenState::String;
@@ -74,6 +84,12 @@ pub fn tokenize(input: String) -> Vec<String> {
                 state = TokenState::Scanning;
             },
 
+            TokenState::Comment => {
+                if ch == '\n' {
+                    state = TokenState::Scanning;
+                }
+            }
+
             TokenState::String => {
                 match ch {
                     '"' | '\'' if current_token.chars().last().unwrap() != '\\' => {
@@ -113,14 +129,14 @@ pub fn tokenize(input: String) -> Vec<String> {
 ///   expression and `rest` is the remaining unparsed tokens.
 /// * `Err(error)` if an error occurs during parsing.
 pub fn parse<'a>(tokens: &'a[String]) -> Result<(CrispExpr, &'a[String]), CrispError> {
-    let (head, tail) = tokens.split_first().ok_or_else(||
-        parse_error_unwrapped!("Couldn't get token.".to_string())
-    )?;
-
-    match &head[..] {
-        "(" => parse_seq(tail),
-        ")" => parse_error!("Unexpected `)`."),
-        _ => Ok((parse_atom(head)?, tail))
+    if let Some((head, tail)) = tokens.split_first() {
+        match &head[..] {
+            "(" => parse_seq(tail),
+            ")" => parse_error!("Unexpected `)`."),
+            _ => Ok((parse_atom(head)?, tail))
+        }
+    } else {
+        Ok((CrispExpr::Nil, &[]))
     }
 }
 
@@ -152,6 +168,8 @@ fn parse_atom(token: &str) -> Result<CrispExpr, CrispError> {
     let expr = match token.as_ref() {
         "true" => CrispExpr::Bool(true),
         "false" => CrispExpr::Bool(false),
+        "nil" => CrispExpr::Nil,
+
         _ => {
             match token.chars().next().unwrap() {
                 ',' => {
@@ -257,10 +275,27 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_symbol() {
-        assert_eq!(parse_atom("foo").unwrap(), sym!("foo"));
-        assert_eq!(parse_atom("var-name").unwrap(), sym!("var-name"));
-        assert_eq!(parse_atom("+").unwrap(), sym!("+"));
+    fn test_tokenize_comments() {
+        assert_eq!(tokenize("(+ 3 var) ;test".to_string()),
+                   vec!["(", "+", "3", "var", ")"]);
+
+        assert_eq!(tokenize("(+ 3 var);test".to_string()),
+                   vec!["(", "+", "3", "var", ")"]);
+
+        assert_eq!(tokenize("(+ 3 var;foo bar)".to_string()),
+                   vec!["(", "+", "3", "var"]);
+
+        assert_eq!(tokenize("(* 5 ; wtf\n    (+\t3 2));lol".to_string()),
+                   vec!["(", "*", "5", "(", "+", "3", "2", ")", ")"]);
+
+        let line_comment = tokenize(";; foo".to_string());
+        assert!(line_comment.is_empty());
+    }
+
+    #[test]
+    fn test_parse_bool() {
+        assert_eq!(parse_atom("true").unwrap(), Bool(true));
+        assert_eq!(parse_atom("false").unwrap(), Bool(false));
     }
 
     #[test]
@@ -273,7 +308,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_string() {
+    fn test_parse_crisp_string() {
         assert_eq!(parse_atom("\"foo\"").unwrap(),
                    str!("foo"));
 
@@ -291,12 +326,24 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_nil() {
+        assert_eq!(parse_atom("nil").unwrap(), Nil);
+    }
+
+    #[test]
     fn test_parse_number() {
         assert_eq!(parse_atom("0").unwrap(), Number(0.0));
         assert_eq!(parse_atom("1").unwrap(), Number(1.0));
         assert_eq!(parse_atom("3.14").unwrap(), Number(3.14));
         assert_eq!(parse_atom("420").unwrap(), Number(420.0));
         assert_eq!(parse_atom("-420").unwrap(), Number(-420.0));
+    }
+
+    #[test]
+    fn test_parse_symbol() {
+        assert_eq!(parse_atom("foo").unwrap(), sym!("foo"));
+        assert_eq!(parse_atom("var-name").unwrap(), sym!("var-name"));
+        assert_eq!(parse_atom("+").unwrap(), sym!("+"));
     }
 
     #[test]
@@ -313,6 +360,16 @@ mod tests {
              sym!("var")
         ]);
 
+        assert!(remaining_tokens.is_empty());
+    }
+
+    #[test]
+    fn test_parse_empty() {
+        let tokens = vec![];
+
+        let (expr, remaining_tokens) = parse(&tokens).unwrap();
+
+        assert_eq!(expr, Nil);
         assert!(remaining_tokens.is_empty());
     }
 
