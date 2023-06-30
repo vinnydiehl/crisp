@@ -20,6 +20,9 @@ pub fn initialize_environment<'a>() -> CrispEnv<'a> {
         }
     }
 
+    add_function!("assert", crisp_assert);
+    add_function!("assert_false", crisp_assert_false);
+
     add_function!("format", crisp_format);
     add_function!("puts", crisp_puts);
     add_function!("print", crisp_print);

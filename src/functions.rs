@@ -1,8 +1,10 @@
+mod assert;
 mod boolean;
 mod io;
 mod lists;
 mod math;
 
+pub use assert::*;
 pub use boolean::*;
 pub use io::*;
 pub use lists::*;
