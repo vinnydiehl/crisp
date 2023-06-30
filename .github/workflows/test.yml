@@ -42,7 +42,14 @@ jobs:
       - name: Load cached dependencies
         uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo test
+      # Need to do a separate build before testing so that the binary
+      # is available for assert_cmd.
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+
+      - name: Run tests
         uses: actions-rs/cargo@v1
         with:
           command: test

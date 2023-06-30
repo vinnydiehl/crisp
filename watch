@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Builds and runs your tests every time a file is saved within the project.
+# Needs to do a separate build before the tests run so that the tests can
+# access the `crisp` executable.
+
+cargo watch -x build -x test
