@@ -37,7 +37,6 @@ pub fn crisp_format(args: &[CrispExpr], _env: &mut CrispEnv) -> Result<CrispExpr
 pub fn crisp_puts(args: &[CrispExpr], env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     if args.is_empty() {
         println!();
-
         Ok(CrispExpr::Nil)
     } else {
         let value = crisp_format(args, env)?;

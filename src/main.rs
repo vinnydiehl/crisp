@@ -24,7 +24,7 @@ use snailquote::escape;
 
 use env::{CrispEnv, initialize_environment};
 use error::CrispError;
-use eval::eval;
+use eval::{eval, eval_func};
 use expr::CrispExpr;
 use reader::{parse, tokenize};
 
@@ -141,5 +141,38 @@ pub fn escape_string(str: &str) -> String {
     match escape(&str) {
         escaped if &escaped == str => format!("'{}'", escaped),
         escaped => escaped.to_string()
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+    /// This module contains runners for the part of the test suite that is
+    /// written in crisp. The external files are located in `tests/`.
+    mod crisp_native {
+        use assert_cmd::Command;
+
+        /// Generates a test that runs the external file `$name.crisp` and asserts that
+        /// the output to stdout matches `$expected`.
+        macro_rules! test_stdout {
+            ($name:ident, $expected:expr) => {
+                #[test]
+                fn $name() {
+                    let mut cmd = Command::cargo_bin("crisp").unwrap();
+                    let assert = cmd.arg(&format!("tests/{}.crisp", stringify!($name))).assert();
+                    assert.success().stdout($expected);
+                }
+            }
+        }
+
+        test_stdout!(comments,
+            "true\n\
+             false\n"
+        );
+
+        test_stdout!(print,
+            "Hello, world!\n\
+             12345\n"
+        );
     }
 }

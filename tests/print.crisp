@@ -1,0 +1,7 @@
+;; Tests for printing functions
+
+print "Hello, "
+puts "world!"
+
+map (\ n (print n)) (1 2 3 4 5)
+puts

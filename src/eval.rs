@@ -15,7 +15,7 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
                 None => {
                     // Is the first item a function? (Func is built-in, Lambda is user-defined)
                     match eval(head, env)? {
-                        CrispExpr::Func(func) => func(&eval_across_list(args, env)?, env),
+                        CrispExpr::Func(func) => eval_func(func, args, env),
                         CrispExpr::Lambda(lambda) => eval_lambda(lambda, args, env),
 
                         // None of the above, evaluate everything and send it
@@ -51,6 +51,16 @@ pub fn eval_across_list(
     env: &mut CrispEnv
 ) -> Result<Vec<CrispExpr>, CrispError> {
     args.iter().map(|a| eval(a, env)).collect()
+}
+
+/// Executes a built-in function `func` with the given `args`, returning
+/// the result.
+pub fn eval_func(
+    func: fn(&[CrispExpr], &mut CrispEnv) -> Result<CrispExpr, CrispError>,
+    args: &[CrispExpr],
+    env: &mut CrispEnv
+) -> Result<CrispExpr, CrispError> {
+    func(&eval_across_list(args, env)?, env)
 }
 
 /// Calls a [`Lambda`](CrispExpr) with the arguments given in `args`, returns

@@ -1,0 +1,7 @@
+;; Test for comments
+
+;puts (!= 3 5)
+puts (!= 3 5)             ; this will print true
+puts (&& (= 3 3) (= 1 4)) ; this will print false
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
