@@ -1,0 +1,13 @@
+;;;; Tests for `if` expressions
+
+assert-eq "success"
+          (if (= 5 5) "success" "failure")
+
+assert-eq "failure"
+          (if (= 5 1) "success" "failure")
+
+let p (= "foo" "foo")
+assert-eq 1 (if p 1 0)
+
+let p (= "foo" "bar")
+assert-eq 0 (if p 1 0)

@@ -1,0 +1,15 @@
+;;;; Tests for the variable assignment keyword `let`
+
+let n 5.2
+assert-eq n 5.2
+
+let str "foo"
+assert-eq str "foo"
+
+let str "changed it"
+assert-eq str "changed it"
+assert-eq n 5.2             ; other variable is unchanged
+
+let add (\ (a b) (+ a b))   ; function definition with let
+let n (add 4 2)
+assert-eq n 6

@@ -1,0 +1,8 @@
+assert-eq ((\ n (* 2 n)) 21) 42
+assert-eq ((\ (a b) (* a b)) 3 5) 15
+
+assert-eq (map (\ n (* 2 n)) (1 2 3 4 5))
+          (2 4 6 8 10)
+
+let double (\ n (* 2 n))
+assert-eq (double 21) 42

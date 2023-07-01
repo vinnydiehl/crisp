@@ -1,0 +1,8 @@
+fn double n (* 2 n)
+assert-eq (double 4.5) 9
+
+fn fmt-num n (format "#{}" n)
+assert-eq (fmt-num 5) "#5"
+
+fn double-sums (a b) (+ (double a) (double b))
+assert-eq (double-sums 2.5 4.5) 14

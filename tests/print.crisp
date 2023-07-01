@@ -5,3 +5,10 @@ puts "world!"
 
 map (\ n (print n)) (1 2 3 4 5)
 puts
+
+let n 5
+((print "Hello, ") (print "worl"))
+(5 (print "d"))
+(n (puts "!"))
+
+puts (puts "foo")

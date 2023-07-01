@@ -24,7 +24,7 @@ use snailquote::escape;
 
 use env::{CrispEnv, initialize_environment};
 use error::CrispError;
-use eval::{eval, eval_func};
+use eval::{eval, resolve};
 use expr::CrispExpr;
 use reader::{parse, tokenize};
 
@@ -105,12 +105,14 @@ fn process_expr(expr: &String, env: &mut CrispEnv, print_ret: bool) -> Result<Cr
 pub fn send(input: String, env: &mut CrispEnv) -> Result<CrispExpr, CrispError> {
     let (ast, _) = parse(&tokenize(input))?;
 
-    // Eval the AST
-    match eval(&ast, env)? {
-        // If it evals to a Func, it's a func with no arguments, we need to run it
-        CrispExpr::Func(func) => eval_func(func, &[], env),
-        // Otherwise we're golden
-        result => Ok(result)
+    match ast {
+        CrispExpr::Symbol(_) => {
+            match resolve(&[ast.clone()], env) {
+                Some(response) => response,
+                None => eval(&ast, env)
+            }
+        }
+        _ => eval(&ast, env),
     }
 }
 
@@ -170,9 +172,14 @@ mod tests {
              false\n"
         );
 
+        test_stdout!(exit_success, "");
+
         test_stdout!(print,
             "Hello, world!\n\
-             12345\n"
+             12345\n\
+             Hello, world!\n\
+             foo\n\
+             foo\n"
         );
 
         macro_rules! test_success {
@@ -187,5 +194,9 @@ mod tests {
         }
 
         test_success!(assert);
+        test_success!(function);
+        test_success!(if_expr);
+        test_success!(lambda);
+        test_success!(variable);
     }
 }

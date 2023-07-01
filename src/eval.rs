@@ -6,26 +6,9 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
     match expr {
         CrispExpr::List(list) if list.is_empty() => Ok(list![]),
         CrispExpr::List(list) => {
-            let head = list.first().unwrap();
-            let args = &list[1..];
-
-            match eval_keyword(head, args, env) {
-                // Is the first item in the list a keyword?
-                Some(response) => response,
-                None => {
-                    // Is the first item a function? (Func is built-in, Lambda is user-defined)
-                    match eval(head, env)? {
-                        CrispExpr::Func(func) => eval_func(func, args, env),
-                        CrispExpr::Lambda(lambda) => eval_lambda(lambda, args, env),
-
-                        // None of the above, evaluate everything and send it
-                        first => {
-                            let mut eval_result = eval_across_list(&list[1..], env)?;
-                            eval_result.insert(0, first);
-                            Ok(CrispExpr::List(eval_result))
-                        }
-                    }
-                }
+            match resolve(list, env) {
+                Some(evaluated_expr) => Ok(evaluated_expr?),
+                _ => Ok(CrispExpr::List(eval_across_list(&list, env)?))
             }
         },
 
@@ -42,6 +25,67 @@ pub fn eval(expr: &CrispExpr, env: &mut CrispEnv) -> Result<CrispExpr, CrispErro
 
         CrispExpr::Func(_) => parse_error!("Found unexpected function."),
         CrispExpr::Lambda(_) => parse_error!("Found unexpected lambda.")
+    }
+}
+
+/// Given a slice of one or more [`CrispExpr`]s, this function will check the
+/// first expression to see if it evalutates to a [`Func`](CrispExpr) or a
+/// [`Lambda`](CrispExpr)- if so, it evaluates the entire slice as a
+/// [`List`](CrispExpr) and returns the result. Otherwise returns `None`.
+pub fn resolve(
+    exprs: &[CrispExpr],
+    env: &mut CrispEnv,
+) -> Option<Result<CrispExpr, CrispError>> {
+    let (head, tail) = exprs.split_first().unwrap();
+
+    match head {
+        CrispExpr::Symbol(_) => {
+            match eval_keyword(head, tail, env) {
+                Some(response) => Some(response),
+                None => {
+                    let evaluated_expr = eval(head, env);
+                    match evaluated_expr {
+                        Ok(CrispExpr::Func(func)) => Some(eval_func(func, tail, env)),
+                        Ok(CrispExpr::Lambda(lambda)) => Some(eval_lambda(lambda, tail, env)),
+
+                        Ok(_) if tail.is_empty() => Some(evaluated_expr),
+                        Ok(_) => Some(join_and_eval_across_list(head, tail, env)),
+
+                        Err(_) => Some(evaluated_expr)
+                    }
+                }
+            }
+        },
+
+        CrispExpr::List(_) => {
+            let result = match eval(head, env) {
+                Ok(CrispExpr::Lambda(lambda)) => eval_lambda(lambda, tail, env),
+
+                Ok(expr) if tail.is_empty() => Ok(expr),
+                Ok(_) => join_and_eval_across_list(head, tail, env),
+
+                res => res
+            };
+
+            Some(result)
+        },
+
+        _ => None
+    }
+}
+
+/// Takes a [`CrispExpr`] and a slice of `CrispExpr`s, joins them together and
+/// calls [`eval_across_list`].
+pub fn join_and_eval_across_list(
+    head: &CrispExpr,
+    tail: &[CrispExpr],
+    env: &mut CrispEnv,
+) -> Result<CrispExpr, CrispError> {
+    match eval_across_list(&tail, env)? {
+        mut eval_result => {
+            eval_result.insert(0, head.clone());
+            Ok(CrispExpr::List(eval_result))
+        }
     }
 }
 

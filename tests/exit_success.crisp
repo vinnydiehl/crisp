@@ -1,0 +1,2 @@
+exit
+puts "This should not print"
