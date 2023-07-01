@@ -174,5 +174,18 @@ mod tests {
             "Hello, world!\n\
              12345\n"
         );
+
+        macro_rules! test_success {
+            ($name:ident) => {
+                #[test]
+                fn $name() {
+                    let mut cmd = Command::cargo_bin("crisp").unwrap();
+                    let assert = cmd.arg(&format!("tests/{}.crisp", stringify!($name))).assert();
+                    assert.success();
+                }
+            }
+        }
+
+        test_success!(assert);
     }
 }

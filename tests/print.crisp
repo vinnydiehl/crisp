@@ -1,4 +1,4 @@
-;; Tests for printing functions
+;;;; Tests for printing functions
 
 print "Hello, "
 puts "world!"

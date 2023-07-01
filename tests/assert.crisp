@@ -1,0 +1,17 @@
+;;;; Tests for asserts
+
+;;; See `src/functions/assert.rs`
+
+assert true
+assert (> 4 2)
+
+assert_false false
+assert_false (= 6 9)
+
+assert_eq 6 6
+assert_eq 6 6 6 6
+assert_eq (+ 5 4) (- 10 1)
+
+assert_not_eq 3 2
+assert_not_eq 6 6 6 7
+assert_not_eq (+ 1 2) (+ 1 1)
