@@ -62,7 +62,22 @@ pub fn resolve(
                 Ok(CrispExpr::Lambda(lambda)) => eval_lambda(lambda, tail, env),
 
                 Ok(expr) if tail.is_empty() => Ok(expr),
-                Ok(_) => join_and_eval_across_list(head, tail, env),
+                Ok(_) => {
+                    let first_pass = join_and_eval_across_list(head, tail, env);
+                    match first_pass {
+                        Ok(CrispExpr::List(ref list)) => {
+                            let (x, xs) = list.split_first().unwrap();
+                            match eval(x, env) {
+                                Ok(CrispExpr::Func(func)) => eval_func(func, xs, env),
+                                Ok(CrispExpr::Lambda(lambda)) => eval_lambda(lambda, xs, env),
+                                Err(e) => Err(e),
+                                _ => first_pass
+                            }
+                        },
+
+                        other => other
+                    }
+                }
 
                 res => res
             };

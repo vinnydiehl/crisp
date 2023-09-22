@@ -6,3 +6,6 @@ assert-eq (fmt-num 5) "#5"
 
 fn double-sums (a b) (+ (double a) (double b))
 assert-eq (double-sums 2.5 4.5) 14
+
+assert-eq ((if (!= 5 5) + -) 5 4)
+          4
